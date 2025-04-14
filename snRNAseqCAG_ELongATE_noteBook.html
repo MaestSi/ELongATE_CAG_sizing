@@ -14132,6 +14132,7 @@ div#notebook {
 
 <span class="c1">#extract training (70%) and test (30%) data for phase model</span>
 <span class="n">training_test_data_phase</span> <span class="o">&lt;-</span> <span class="nf">data.frame</span><span class="p">(</span><span class="n">PHASE</span> <span class="o">=</span> <span class="n">PHASE_SPN</span><span class="p">,</span> <span class="nf">t</span><span class="p">(</span><span class="n">phaseC_counts_SPN</span><span class="p">))</span>
+<span class="nf">set.seed</span><span class="p">(</span><span class="m">1</span><span class="p">)</span>
 <span class="n">ind_training_phase</span> <span class="o">&lt;-</span> <span class="nf">sample</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="m">1</span><span class="o">:</span><span class="nf">round</span><span class="p">(</span><span class="nf">length</span><span class="p">(</span><span class="n">PHASE_SPN</span><span class="p">)),</span> <span class="n">size</span> <span class="o">=</span> <span class="nf">round</span><span class="p">(</span><span class="nf">length</span><span class="p">(</span><span class="n">PHASE_SPN</span><span class="p">)</span><span class="o">*</span><span class="m">0.7</span><span class="p">),</span> <span class="n">replace</span> <span class="o">=</span> <span class="kc">FALSE</span><span class="p">)</span>
 <span class="n">ind_test_phase</span> <span class="o">&lt;-</span> <span class="nf">setdiff</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="nf">round</span><span class="p">(</span><span class="nf">length</span><span class="p">(</span><span class="n">PHASE_SPN</span><span class="p">)),</span> <span class="n">ind_training_phase</span><span class="p">)</span>
 
@@ -14372,26 +14373,6 @@ div#notebook {
 </div>
 
 </div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-r"><pre><span></span><span class="nf">ggplot</span><span class="p">(</span><span class="n">HD_Handsaker_fract_CDE</span><span class="p">,</span> <span class="nf">aes</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="n">GRADE</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">FRACT_CDE</span><span class="p">,</span> <span class="n">size</span> <span class="o">=</span> <span class="n">FRACT_SPN</span><span class="p">))</span> <span class="o">+</span>
-<span class="nf">geom_point</span><span class="p">(</span><span class="nf">aes</span><span class="p">(</span><span class="n">size</span> <span class="o">=</span> <span class="n">FRACT_SPN</span><span class="p">),</span> <span class="n">color</span> <span class="o">=</span> <span class="s">&quot;#F8766D&quot;</span><span class="p">,</span> <span class="n">alpha</span> <span class="o">=</span> <span class="m">0.8</span><span class="p">,</span> <span class="n">position</span> <span class="o">=</span> <span class="nf">position_jitter</span><span class="p">(</span><span class="n">width</span> <span class="o">=</span> <span class="m">0</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="m">0</span><span class="p">))</span> <span class="o">+</span>
-<span class="c1">#scale_color_manual(values =c(&quot;#F8766D&quot;)) +</span>
-<span class="nf">theme_classic</span><span class="p">()</span> <span class="o">+</span>
-<span class="nf">xlab</span><span class="p">(</span><span class="s">&quot;HD Grade&quot;</span><span class="p">)</span> <span class="o">+</span>
-<span class="nf">ylim</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">25</span><span class="p">))</span> <span class="o">+</span>
-<span class="nf">ylab</span><span class="p">(</span><span class="s">&quot;Fraction cells in C-D-E phase (%)&quot;</span><span class="p">)</span>
-<span class="nf">ggsave</span><span class="p">(</span><span class="s">&quot;HD_Handsaker_fraction_CDE.pdf&quot;</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="m">6</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="m">6</span><span class="p">)</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
@@ -14407,6 +14388,7 @@ div#notebook {
 <div class=" highlight hl-r"><pre><span></span><span class="n">CAGLENGTH_SPN_sized</span> <span class="o">&lt;-</span> <span class="n">SPN_HD</span><span class="o">@</span><span class="n">meta.data[</span><span class="p">,</span> <span class="s">&quot;CAGLENGTH&quot;</span><span class="n">]</span>
 <span class="n">training_test_data</span> <span class="o">&lt;-</span> <span class="nf">data.frame</span><span class="p">(</span><span class="nf">cbind</span><span class="p">(</span><span class="n">CAGLENGTH_SPN_sized</span><span class="p">,</span> <span class="nf">t</span><span class="p">(</span><span class="n">phaseC_counts_SPN</span><span class="p">)))</span>
 
+<span class="nf">set.seed</span><span class="p">(</span><span class="m">1</span><span class="p">)</span>
 <span class="n">ind_training</span> <span class="o">&lt;-</span> <span class="nf">sample</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="m">1</span><span class="o">:</span><span class="nf">round</span><span class="p">(</span><span class="nf">dim</span><span class="p">(</span><span class="n">SPN_HD</span><span class="o">@</span><span class="n">assays</span><span class="o">$</span><span class="n">SCT</span><span class="o">$</span><span class="n">data</span><span class="p">)</span><span class="n">[2]</span><span class="p">),</span> <span class="n">size</span> <span class="o">=</span> <span class="nf">round</span><span class="p">(</span><span class="nf">dim</span><span class="p">(</span><span class="n">SPN_HD</span><span class="o">@</span><span class="n">assays</span><span class="o">$</span><span class="n">SCT</span><span class="o">$</span><span class="n">data</span><span class="p">)</span><span class="n">[2]</span><span class="o">*</span><span class="m">0.7</span><span class="p">),</span> <span class="n">replace</span> <span class="o">=</span> <span class="kc">FALSE</span><span class="p">)</span>
 <span class="n">ind_test</span> <span class="o">&lt;-</span> <span class="nf">setdiff</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="nf">round</span><span class="p">(</span><span class="nf">dim</span><span class="p">(</span><span class="n">SPN_HD</span><span class="o">@</span><span class="n">assays</span><span class="o">$</span><span class="n">SCT</span><span class="o">$</span><span class="n">data</span><span class="p">)</span><span class="n">[2]</span><span class="p">),</span> <span class="n">ind_training</span><span class="p">)</span>
 
@@ -14519,6 +14501,26 @@ div#notebook {
 <span class="n">HD_Handsaker_fract_CDE</span><span class="o">$</span><span class="n">GRADE</span> <span class="o">&lt;-</span> <span class="n">Handsaker_donor_metadata</span><span class="nf">[rownames</span><span class="p">(</span><span class="n">HD_Handsaker_fract_CDE</span><span class="p">),</span> <span class="s">&quot;VS_Grade&quot;</span><span class="n">]</span>
 <span class="n">HD_Handsaker_fract_CDE</span><span class="o">$</span><span class="n">FRACT_SPN</span> <span class="o">&lt;-</span> <span class="n">num_cells_Handsaker</span><span class="nf">[rownames</span><span class="p">(</span><span class="n">HD_Handsaker_fract_CDE</span><span class="p">),</span> <span class="s">&quot;num_spns&quot;</span><span class="n">]</span><span class="o">/</span><span class="n">num_cells_Handsaker</span><span class="nf">[rownames</span><span class="p">(</span><span class="n">HD_Handsaker_fract_CDE</span><span class="p">),</span> <span class="s">&quot;num_cells&quot;</span><span class="n">]</span>
 <span class="n">HD_Handsaker_fract_CDE</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-r"><pre><span></span><span class="nf">ggplot</span><span class="p">(</span><span class="n">HD_Handsaker_fract_CDE</span><span class="p">,</span> <span class="nf">aes</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="n">GRADE</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">FRACT_CDE</span><span class="p">,</span> <span class="n">size</span> <span class="o">=</span> <span class="n">FRACT_SPN</span><span class="p">))</span> <span class="o">+</span>
+<span class="nf">geom_point</span><span class="p">(</span><span class="nf">aes</span><span class="p">(</span><span class="n">size</span> <span class="o">=</span> <span class="n">FRACT_SPN</span><span class="p">),</span> <span class="n">color</span> <span class="o">=</span> <span class="s">&quot;#F8766D&quot;</span><span class="p">,</span> <span class="n">alpha</span> <span class="o">=</span> <span class="m">0.8</span><span class="p">,</span> <span class="n">position</span> <span class="o">=</span> <span class="nf">position_jitter</span><span class="p">(</span><span class="n">width</span> <span class="o">=</span> <span class="m">0</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="m">0</span><span class="p">))</span> <span class="o">+</span>
+<span class="c1">#scale_color_manual(values =c(&quot;#F8766D&quot;)) +</span>
+<span class="nf">theme_classic</span><span class="p">()</span> <span class="o">+</span>
+<span class="nf">xlab</span><span class="p">(</span><span class="s">&quot;HD Grade&quot;</span><span class="p">)</span> <span class="o">+</span>
+<span class="nf">ylim</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">25</span><span class="p">))</span> <span class="o">+</span>
+<span class="nf">ylab</span><span class="p">(</span><span class="s">&quot;Fraction cells in C-D-E phase (%)&quot;</span><span class="p">)</span>
+<span class="nf">ggsave</span><span class="p">(</span><span class="s">&quot;HD_Handsaker_fraction_CDE.pdf&quot;</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="m">6</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="m">6</span><span class="p">)</span>
 </pre></div>
 
     </div>
