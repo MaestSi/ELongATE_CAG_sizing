@@ -567,41 +567,45 @@ ggsave("UMAP_Handsaker_CTRL_clusters_cleaned_splitBySampleMerged.pdf", width = 8
 
 ```R
 #do plots for CAG size of HD samples
+#do plots for CAG size of HD samples
 p <- ggplot(SPN_HD@meta.data, aes(x = CAGLENGTH)) +
 geom_histogram(binwidth = 5, alpha = 0.5, position = "identity", fill = "#F8766D") +
 geom_vline(aes(xintercept = 150), colour="black", linetype = 2) +
-  theme(legend.title = element_text(size = 10),
-        legend.text = element_text(size = 10),
-        axis.text.x = element_text(size = 10, angle = 90, vjust = 0.5),
-        axis.text.y = element_text(size = 10),
-        axis.title.x = element_text(size = 14),
-        axis.title.y = element_text(size = 14),
-        panel.background = element_blank())
+theme_classic()
+#   theme(legend.title = element_text(size = 10),
+#         legend.text = element_text(size = 10),
+#         axis.text.x = element_text(size = 10, angle = 90, vjust = 0.5),
+#         axis.text.y = element_text(size = 10),
+#         axis.title.x = element_text(size = 14),
+#         axis.title.y = element_text(size = 14),
+#         panel.background = element_blank())
 plot(p)
 ggsave("Handsaker_CAGLENGTH_hist.pdf", width = 8, height = 8)
 
 p <- ggplot(SPN_HD@meta.data, aes(x = EXP_CAGLENGTH)) +
 geom_histogram(binwidth = 5, alpha = 0.5, position = "identity", fill = "#F8766D") +
 geom_vline(aes(xintercept = 150), colour="black", linetype = 2) +
-  theme(legend.title = element_text(size = 10),
-        legend.text = element_text(size = 10),
-        axis.text.x = element_text(size = 10, angle = 90, vjust = 0.5),
-        axis.text.y = element_text(size = 10),
-        axis.title.x = element_text(size = 14),
-        axis.title.y = element_text(size = 14),
-        panel.background = element_blank())
+theme_classic()
+#   theme(legend.title = element_text(size = 10),
+#         legend.text = element_text(size = 10),
+#         axis.text.x = element_text(size = 10, angle = 90, vjust = 0.5),
+#         axis.text.y = element_text(size = 10),
+#         axis.title.x = element_text(size = 14),
+#         axis.title.y = element_text(size = 14),
+#         panel.background = element_blank())
 plot(p)
 ggsave("Handsaker_CAGLENGTH_EXP_hist.pdf", width = 8, height = 8)
 p <- ggplot(SPN_HD@meta.data, aes(x = EXP_CAGLENGTH, fill = SAMPLE)) +
 geom_histogram(binwidth = 5, alpha = 0.5, position = "identity") + 
 geom_vline(aes(xintercept = 150), colour="black", linetype = 2) +
-  theme(legend.title = element_text(size = 10),
-        legend.text = element_text(size = 10),
-        axis.text.x = element_text(size = 10, angle = 90, vjust = 0.5),
-        axis.text.y = element_text(size = 10),
-        axis.title.x = element_text(size = 14),
-        axis.title.y = element_text(size = 14),
-        panel.background = element_blank())
+theme_classic()
+#   theme(legend.title = element_text(size = 10),
+#         legend.text = element_text(size = 10),
+#         axis.text.x = element_text(size = 10, angle = 90, vjust = 0.5),
+#         axis.text.y = element_text(size = 10),
+#         axis.title.x = element_text(size = 14),
+#         axis.title.y = element_text(size = 14),
+#         panel.background = element_blank())
 plot(p)
 ggsave("Handsaker_CAGLENGTH_hist_splitBySample.pdf", width = 8, height = 8)
 
@@ -621,26 +625,28 @@ ggsave("Handsaker_CAGLENGTH_EXP_hist_splitBySample.pdf", width = 8, height = 8)
 p <- ggplot(SPN_HD@meta.data, aes(x = EXP_CAGLENGTH)) +
 geom_histogram(binwidth = 5, alpha = 0.5, position = "identity", fill = "#F8766D") +
 xlim(c(150, 1000)) +
-  theme(legend.title = element_text(size = 10),
-        legend.text = element_text(size = 10),
-        axis.text.x = element_text(size = 10, angle = 90, vjust = 0.5),
-        axis.text.y = element_text(size = 10),
-        axis.title.x = element_text(size = 14),
-        axis.title.y = element_text(size = 14),
-        panel.background = element_blank())
+theme_classic()
+#   theme(legend.title = element_text(size = 10),
+#         legend.text = element_text(size = 10),
+#         axis.text.x = element_text(size = 10, angle = 90, vjust = 0.5),
+#         axis.text.y = element_text(size = 10),
+#         axis.title.x = element_text(size = 14),
+#         axis.title.y = element_text(size = 14),
+#         panel.background = element_blank())
 plot(p)
 ggsave("Handsaker_CAGLENGTH_hist_phaseC.pdf", width = 8, height = 8)
 
 p <- ggplot(SPN_HD@meta.data, aes(x = EXP_CAGLENGTH, fill = SAMPLE)) +
 geom_histogram(binwidth = 5, alpha = 0.5, position = "identity") + 
 xlim(c(150, 1000)) +
-  theme(legend.title = element_text(size = 10),
-        legend.text = element_text(size = 10),
-        axis.text.x = element_text(size = 10, angle = 90, vjust = 0.5),
-        axis.text.y = element_text(size = 10),
-        axis.title.x = element_text(size = 14),
-        axis.title.y = element_text(size = 14),
-        panel.background = element_blank())
+theme_classic()
+#   theme(legend.title = element_text(size = 10),
+#         legend.text = element_text(size = 10),
+#         axis.text.x = element_text(size = 10, angle = 90, vjust = 0.5),
+#         axis.text.y = element_text(size = 10),
+#         axis.title.x = element_text(size = 14),
+#         axis.title.y = element_text(size = 14),
+#         panel.background = element_blank())
 plot(p)
 ggsave("Handsaker_CAGLENGTH_hist_phaseC_splitBySample.pdf", width = 8, height = 8)
 ```
@@ -1182,16 +1188,19 @@ df_allPhaseCgenes_sorted$PHASE <- "A-B"
 df_allPhaseCgenes_sorted$PHASE[which(df_allPhaseCgenes_sorted$CAGLENGTH_SPN_sized > 150)] <- "C-D-E"
 df_allPhaseCgenes_sorted$index <- seq_along(df_allPhaseCgenes_sorted$avg_expr_PhaseC)
 
+ind_150_all <- df_allPhaseCgenes_sorted[which(df_allPhaseCgenes_sorted$CAGLENGTH_SPN_sized > 150), "index"][1]
 p1 <- ggplot(df_allPhaseCgenes_sorted, aes(x = index, y = avg_expr_PhaseC, color = PHASE)) +
 geom_point(aes(x = index, y = avg_expr_PhaseC, color = PHASE), size = 1) +
-theme(legend.title = element_text(size = 10),
-        legend.text = element_text(size = 10),
-        #axis.text.x = element_text(size = 10, angle = 90, vjust = 0.5),
-        axis.text.x = element_blank(),
-        axis.text.y = element_text(size = 10),
-        axis.title.x = element_text(size = 14),
-        axis.title.y = element_text(size = 14),
-        panel.background = element_blank()) +
+theme_classic() +
+# theme(legend.title = element_text(size = 10),
+#         legend.text = element_text(size = 10),
+#         #axis.text.x = element_text(size = 10, angle = 90, vjust = 0.5),
+#         axis.text.x = element_blank(),
+#         axis.text.y = element_text(size = 10),
+#         axis.title.x = element_text(size = 14),
+#         axis.title.y = element_text(size = 14),
+#         panel.background = element_blank()) +
+geom_vline(aes(xintercept = ind_150_all), colour="black", linetype = 2) +
 xlab("SPNs sorted by CAG length") +
 ylab("Average expression Phase C genes")
 
@@ -1199,14 +1208,15 @@ ind_150 <- df_sorted[which(df_sorted$CAGLENGTH_SPN_sized > 150), "index"][1]
 p2 <- ggplot(df_sorted, aes(x = index)) +
 geom_point(aes(y = score, color = PRED_PHASE, alpha = PROB_PHASE_CDE), size = 1) +
 geom_point(aes(y = CAGLENGTH_SPN_sized), size = 0.1) +
-theme(legend.title = element_text(size = 10),
-        legend.text = element_text(size = 10),
-        #axis.text.x = element_text(size = 10, angle = 90, vjust = 0.5),
-        axis.text.x = element_blank(),
-        axis.text.y = element_text(size = 10),
-        axis.title.x = element_text(size = 14),
-        axis.title.y = element_text(size = 14),
-        panel.background = element_blank()) +
+theme_classic() +
+# theme(legend.title = element_text(size = 10),
+#         legend.text = element_text(size = 10),
+#         #axis.text.x = element_text(size = 10, angle = 90, vjust = 0.5),
+#         axis.text.x = element_blank(),
+#         axis.text.y = element_text(size = 10),
+#         axis.title.x = element_text(size = 14),
+#         axis.title.y = element_text(size = 14),
+#         panel.background = element_blank()) +
 geom_vline(aes(xintercept = ind_150), colour="black", linetype = 2) +
 #geom_hline(aes(yintercept = 150), colour="black", linetype = 2) +
 xlab("SPNs sorted by CAG length") +
@@ -1217,17 +1227,19 @@ ind_150_filt <- df_sorted_filtered[which(df_sorted_filtered$CAGLENGTH_SPN_sized 
 p3 <- ggplot(df_sorted_filtered, aes(x = index)) +
 geom_point(aes(y = score, color = PRED_PHASE, alpha = PROB_PHASE_CDE), size = 1) +
 geom_point(aes(y = CAGLENGTH_SPN_sized), size = 0.1) +
-theme(legend.title = element_text(size = 10),
-        legend.text = element_text(size = 10),
-        #axis.text.x = element_text(size = 10, angle = 90, vjust = 0.5),
-        axis.text.x = element_blank(),
-        axis.text.y = element_text(size = 10),
-        axis.title.x = element_text(size = 14),
-        axis.title.y = element_text(size = 14),
-        panel.background = element_blank()) +
+theme_classic() +
+# theme(legend.title = element_text(size = 10),
+#         legend.text = element_text(size = 10),
+#         #axis.text.x = element_text(size = 10, angle = 90, vjust = 0.5),
+#         axis.text.x = element_blank(),
+#         axis.text.y = element_text(size = 10),
+#         axis.title.x = element_text(size = 14),
+#         axis.title.y = element_text(size = 14),
+#         panel.background = element_blank()) +
 xlim(c(ind_150_filt, max(df_sorted_filtered$index))) +
 xlab("SPNs sorted by CAG length") +
 ylab("Number of CAG repeats")
+
 
 #ggarrange(p1, p2, nrow = 2, ncol = 1)
 
