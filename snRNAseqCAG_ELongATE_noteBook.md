@@ -912,6 +912,7 @@ tmp_Handsaker <- do.call(rbind,lapply(split(SPN_HD@meta.data$PHASE, SPN_HD@meta.
 HD_Handsaker_fract_CDE <- data.frame(DATASET = "Handsaker_Caudate", SAMPLE = rownames(tmp_Handsaker), FRACT_CDE=100*tmp_Handsaker[, 2]/(tmp_Handsaker[, 1] + tmp_Handsaker[, 2]), NUM_SPN=tmp_Handsaker[, 1] + tmp_Handsaker[, 2])
 HD_Handsaker_fract_CDE$GRADE <- Handsaker_donor_metadata[rownames(HD_Handsaker_fract_CDE), "VS_Grade"]
 HD_Handsaker_fract_CDE$FRACT_SPN <- num_cells_Handsaker[rownames(HD_Handsaker_fract_CDE), "num_spns"]/num_cells_Handsaker[rownames(HD_Handsaker_fract_CDE), "num_cells"]
+HD_Handsaker_fract_CDE$GRADE <- factor(HD_Handsaker_fract_CDE$GRADE, levels = c("n/a", "HD-0", "HD-1", "HD-2", "HD-3"))
 HD_Handsaker_fract_CDE
 ```
 
