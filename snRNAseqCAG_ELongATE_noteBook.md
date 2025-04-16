@@ -1322,13 +1322,14 @@ Evaluate_correlation <- function(Data, x, y, quant_thr = 1, abl = TRUE, notes = 
   p <- ggplot(df, aes(x= CAG, fill = method)) +
   geom_histogram(binwidth = 5, alpha = 0.5, position = "identity") +
   xlab("Num. CAG") + ylab("Num. SPNs") +
-  theme(legend.title = element_text(size = 10),
-        legend.text = element_text(size = 10),
-        axis.text.x = element_text(size = 10, angle = 90, vjust = 0.5),
-        axis.text.y = element_text(size = 10),
-        axis.title.x = element_text(size = 14),
-        axis.title.y = element_text(size = 14),
-        panel.background = element_blank())
+  theme_classic()
+#   theme(legend.title = element_text(size = 10),
+#         legend.text = element_text(size = 10),
+#         axis.text.x = element_text(size = 10, angle = 90, vjust = 0.5),
+#         axis.text.y = element_text(size = 10),
+#         axis.title.x = element_text(size = 14),
+#         axis.title.y = element_text(size = 14),
+#         panel.background = element_blank())
 
 print(gsub(x = notes, pattern = "_", replacement = " "))
   #  +  geom_vline(aes(xintercept = 150), colour="black", linetype = 2)
