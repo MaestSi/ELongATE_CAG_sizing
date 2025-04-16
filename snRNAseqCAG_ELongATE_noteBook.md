@@ -1319,8 +1319,11 @@ Evaluate_correlation <- function(Data, x, y, quant_thr = 1, abl = TRUE, notes = 
   Data_filt <- Data[ind_noNA, ]
   df <- data.frame(CAG = c(Data_filt[, x], Data_filt[, y]), method = c(rep("Measured", dim(Data_filt)[1]), rep("Predicted", dim(Data_filt)[1])))
   
-  p <- ggplot(df, aes(x= CAG, fill = method)) +
-  geom_histogram(binwidth = 5, alpha = 0.5, position = "identity") +
+  p <- ggplot(df, aes(x= CAG, fill = method, color = method)) +
+  geom_density(alpha = 0.5, adjust = 1) +
+  #geom_histogram(binwidth = 5, alpha = 0.5, position = "identity") +
+  scale_color_manual(values = c("purple", "green")) +
+  scale_fill_manual(values = c("purple", "green")) +
   xlab("Num. CAG") + ylab("Num. SPNs") +
   theme_classic()
 #   theme(legend.title = element_text(size = 10),
