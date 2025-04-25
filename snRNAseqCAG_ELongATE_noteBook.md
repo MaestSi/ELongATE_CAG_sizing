@@ -1292,7 +1292,7 @@ results_training_phaseC_measured <- results_training[which(results_training$CAG_
 
 #plot correlation between CAG sizing measured values and predictions
 Evaluate_correlation <- function(Data, x, y, quant_thr = 1, abl = TRUE, notes = "") {
-  correlation <- cor(Data[, x], Data[, y], method = "pearson", use = "complete.obs")
+  correlation <- cor(Data[, x], Data[, y], method = "spearman", use = "complete.obs")
   pdf(paste0("AccuracyPred_", notes, ".pdf"))
   smoothScatter(Data[, x], Data[, y], xlab = x, ylab = y, cex.main = 0.6, cex.axis = 0.8,
                 xlim = c(0, quantile(c(Data[, x], Data[, y]), quant_thr, na.rm = TRUE)), 
@@ -1303,7 +1303,7 @@ Evaluate_correlation <- function(Data, x, y, quant_thr = 1, abl = TRUE, notes = 
   }
   dev.off()
     
-  smoothScatter(Data[, x], Data[, y], xlab = x, main = paste0(y, " VS ", x, "\n r Pearson. = ",
+  smoothScatter(Data[, x], Data[, y], xlab = x, main = paste0(y, " VS ", x, "\n r Spearman = ",
                 sprintf("%.2f", correlation), "\n ", notes, " - n = ", dim(Data)[1]), ylab = y, cex.main = 0.6, cex.axis = 0.8,
                 xlim = c(0, quantile(c(Data[, x], Data[, y]), quant_thr, na.rm = TRUE)), ylim = c(0, quantile(c(Data[, x], Data[, y]), quant_thr, na.rm = TRUE)))
  
@@ -1311,7 +1311,7 @@ Evaluate_correlation <- function(Data, x, y, quant_thr = 1, abl = TRUE, notes = 
     abline(0, 1, col = "green")
   }
     
-  print(paste0(y, " VS ", x, "\n r Pearson. = ", 
+  print(paste0(y, " VS ", x, "\n r Spearman = ", 
               sprintf("%.2f", correlation), "\n ", notes, " - n = ", dim(Data)[1]))
   
   
