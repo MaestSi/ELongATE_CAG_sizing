@@ -989,7 +989,8 @@ tmp12C <- do.call(rbind, tmp11C)
 
 Handsaker_donor_metadata_CTRL <- cbind(tmp2C, tmp4C, tmp6C, tmp8C, tmp10C, tmp12C, GERM_CAGEXP = NA, Handsaker_donor_metadata_CTRL[rownames(tmp4C), ])
 Handsaker_donor_metadata_CTRL$FRACT_CDE <- 0
-Handsaker_donor_metadata_CTRL$PRED_FRACT_CDE <- 0
+Handsaker_donor_metadata_CTRL$FRACT_CDE_TEST <- 0
+if (is.na(Handsaker_donor_metadata_CTRL$PRED_FRACT_CDE)) Handsaker_donor_metadata_CTRL$PRED_FRACT_CDE <- 0
 Handsaker_donor_metadata_CTRL
 ```
 
