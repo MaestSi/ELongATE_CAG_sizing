@@ -1812,7 +1812,7 @@ phase_test_Lee_CTRL_MSN_Putamen <- data.frame(t(phase_counts_Lee_CTRL_MSN_Putame
 
 ```R
 #predict phase
-class_thr <- 0.5
+class_thr <- 0.1
 predicted_phase_test_Lee_HD_MSN_Putamen_wprob <- predict(model_phase, newx = as.matrix(phase_test_Lee_HD_MSN_Putamen), s = lambda_val, type = "response") #glmnet
 predicted_phase_test_Lee_HD_MSN_Putamen <- rep("A-B", dim(predicted_phase_test_Lee_HD_MSN_Putamen_wprob)[1])  
 predicted_phase_test_Lee_HD_MSN_Putamen[which(predicted_phase_test_Lee_HD_MSN_Putamen_wprob > class_thr)] <- "C-D-E" #glmnet
@@ -2386,7 +2386,7 @@ ggsave("UMAP_Paryani_HD_MSN_Accumbens_CELLTYPE.pdf", width = 8, height = 8)
 DimPlot(Paryani_HD_MSN_Accumbens, group.by = "CAG", reduction = "harmony", pt.size = 1)
 ggsave("UMAP_Paryani_HD_MSN_Accumbens_CAG.pdf", width = 8, height = 8)
 DimPlot(Paryani_HD_MSN_Accumbens, group.by = "Batch", reduction = "harmony", pt.size = 1)
-ggsave("UMAP_HD_Paryani_MSN_Accumbens_BATCH.pdf", width = 8, height = 8)
+ggsave("UMAP_Paryani_HD_MSN_Accumbens_BATCH.pdf", width = 8, height = 8)
 DimPlot(Paryani_HD_MSN_Accumbens, group.by = "Region", reduction = "harmony", pt.size = 1)
 ggsave("UMAP_Paryani_MSN_Accumbens_REGION.pdf", width = 8, height = 8)
 DimPlot(Paryani_HD_MSN_Accumbens, group.by = "Donor", reduction = "harmony", pt.size = 1)
@@ -2430,7 +2430,7 @@ phase_test_Paryani_CTRL_MSN_Accumbens <- data.frame(t(phase_counts_Paryani_CTRL_
 
 ```R
 #predict phase
-class_thr <- 0.5
+class_thr <- 0.9
 predicted_phase_test_Paryani_HD_MSN_Accumbens_wprob <- predict(model_phase, newx = as.matrix(phase_test_Paryani_HD_MSN_Accumbens), s = lambda_val, type = "response") #glmnet
 predicted_phase_test_Paryani_HD_MSN_Accumbens <- rep("A-B", dim(predicted_phase_test_Paryani_HD_MSN_Accumbens_wprob)[1])  
 predicted_phase_test_Paryani_HD_MSN_Accumbens[which(predicted_phase_test_Paryani_HD_MSN_Accumbens_wprob > class_thr)] <- "C-D-E" #glmnet
