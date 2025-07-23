@@ -33,6 +33,8 @@
 [Run model on Paryani MSNs dataset from Accumbens](#Paryani_Accumbens_only)
     
 [Plot predictions on controls](#Plot_controls)
+    
+[Run model on human_fetal_LGE](#Human_fetal_LGE)
 
 # Load_packages
 
@@ -2648,6 +2650,11 @@ ggsave("Paryani_Accumbens_GRADE_vs_fraction_SPN_CDE.pdf", width = 6, height = 6)
 # ggsave("Paryani_Accumbens_GRADE_vs_fraction_SPN_CDE_gt30.pdf", width = 6, height = 6)
 ```
 
+
+```R
+
+```
+
 # Plot_controls
 
 
@@ -2811,4 +2818,133 @@ ylim(c(0, 100)) +
 ylab("Non-HD donors - Fraction cells in C-D-E phase (%)")
 ggsave("CTRL_all_datasets_nonCaudate_fraction_CDE.pdf", width = 8, height = 8)
 #"#7CAE00", "#00BFC4", "#C77CFF"
+```
+
+# Human_fetal_LGE
+
+
+```R
+LGE_fetal <- readRDS("/mnt/projects/labs/CLAB/PROJECT_ELongATE/mb_LGE2UCell.rds")
+
+head(LGE_fetal@meta.data)
+table(LGE_fetal@meta.data$celltype)
+table(LGE_fetal@meta.data$sample_name)
+```
+
+
+```R
+LGE_fetal_MSN <- subset(LGE_fetal, subset = celltype == "D1 MSNs PDYN+" | celltype == "D1 MSNs TSHZ1+" | celltype == "D2 MSNs PENK+" | celltype == "AP" | celltype == "BP")
+```
+
+
+```R
+LGE_fetal_MSN_CTRL <- subset(LGE_fetal_MSN, subset = sample_name != "HD_01")
+```
+
+
+```R
+LGE_fetal_MSN_CTRL <- SCTransform(LGE_fetal_MSN_CTRL)
+LGE_fetal_MSN_CTRL <- RunPCA(LGE_fetal_MSN_CTRL, features = VariableFeatures(object = LGE_fetal_MSN_CTRL), npcs = 50, reduction.name = "pca")
+ElbowPlot(LGE_fetal_MSN_CTRL, reduction = "pca", ndims = 50)
+num_dims <- 40
+LGE_fetal_MSN_CTRL <- RunUMAP(LGE_fetal_MSN_CTRL, dims = 1:num_dims, reduction = "pca", reduction.name = "umap", reduction.key = "umap")
+DimPlot(LGE_fetal_MSN_CTRL, group.by = "celltype", reduction = "umap", pt.size = 1)
+ggsave("UMAP_LGE_fetal_CTRL_MSN_celltype.pdf", width = 8, height = 8)
+DimPlot(LGE_fetal_MSN_CTRL, group.by = "sample_name", reduction = "umap", pt.size = 1)
+ggsave("UMAP_LGE_fetal_CTRL_MSN_sample.pdf", width = 8, height = 8)
+```
+
+
+```R
+phaseC_genes_LGE_fetal_MSN_CTRL <- intersect(colnames(phase_test), rownames(LGE_fetal_MSN_CTRL))
+phaseC_genes_notExpLGE_fetal_MSN_CTRL_names <- setdiff(colnames(phase_test), rownames(LGE_fetal_MSN_CTRL))
+phaseC_genes_notExpLGE_fetal_MSN_CTRL <- matrix(data = 0, nrow = length(phaseC_genes_notExpLGE_fetal_MSN_CTRL_names), ncol = dim(LGE_fetal_MSN_CTRL@assays$SCT$data)[2])
+rownames(phaseC_genes_notExpLGE_fetal_MSN_CTRL) <- phaseC_genes_notExpLGE_fetal_MSN_CTRL_names
+colnames(phaseC_genes_notExpLGE_fetal_MSN_CTRL) <- colnames(LGE_fetal_MSN_CTRL@assays$SCT$data)
+phase_counts_LGE_fetal_MSN_CTRL <- LGE_fetal_MSN_CTRL@assays$SCT$data[phaseC_genes_LGE_fetal_MSN_CTRL, ]
+phase_counts_LGE_fetal_MSN_CTRL <- rbind(phase_counts_LGE_fetal_MSN_CTRL, phaseC_genes_notExpLGE_fetal_MSN_CTRL)
+
+phase_counts_LGE_fetal_MSN_CTRL <- phase_counts_LGE_fetal_MSN_CTRL[colnames(phase_test), ]
+phase_test_LGE_fetal_MSN_CTRL <- data.frame(t(phase_counts_LGE_fetal_MSN_CTRL))
+head(phase_test_LGE_fetal_MSN_CTRL)
+
+class_thr <- 0.7
+predicted_phase_test_LGE_fetal_MSN_CTRL_wprob <- predict(model_phase, newx = as.matrix(phase_test_LGE_fetal_MSN_CTRL), s = lambda_val, type = "response") #glmnet
+predicted_phase_test_LGE_fetal_MSN_CTRL <- rep("A-B", dim(predicted_phase_test_LGE_fetal_MSN_CTRL_wprob)[1])  
+predicted_phase_test_LGE_fetal_MSN_CTRL[which(predicted_phase_test_LGE_fetal_MSN_CTRL_wprob > class_thr)] <- "C-D-E" #glmnet
+LGE_fetal_MSN_CTRL[["PREDICTED_PHASE"]] <- NA
+LGE_fetal_MSN_CTRL@meta.data[rownames(predicted_phase_test_LGE_fetal_MSN_CTRL_wprob), "PREDICTED_PHASE"] <- predicted_phase_test_LGE_fetal_MSN_CTRL
+LGE_fetal_MSN_CTRL[["PROB_PHASE_CDE"]] <- NA
+LGE_fetal_MSN_CTRL@meta.data[rownames(predicted_phase_test_LGE_fetal_MSN_CTRL_wprob), "PROB_PHASE_CDE"] <- predicted_phase_test_LGE_fetal_MSN_CTRL_wprob
+```
+
+
+```R
+thr <- 0.7
+100 - 100*length(which(predicted_phase_test_LGE_fetal_MSN_CTRL_wprob > thr))/length(predicted_phase_test_LGE_fetal_MSN_CTRL_wprob)
+```
+
+
+```R
+DimPlot(LGE_fetal_MSN_CTRL, group.by = "PREDICTED_PHASE", reduction = "umap", pt.size = 1)
+ggsave("UMAP_LGE_fetal_MSN_CTRL_PREDPHASE.pdf", width = 8, height = 8)
+FeaturePlot(LGE_fetal_MSN_CTRL, features = "PROB_PHASE_CDE", cols = c("blue", "red"), pt.size = 1, reduction = "umap")
+ggsave("UMAP_LGE_fetal_MSN_CTRL_PROBPREDPHASE.pdf", width = 8, height = 8)
+```
+
+
+```R
+LGE_fetal_MSN_HD <- subset(LGE_fetal_MSN, subset = sample_name == "HD_01")
+```
+
+
+```R
+LGE_fetal_MSN_HD <- SCTransform(LGE_fetal_MSN_HD)
+LGE_fetal_MSN_HD <- RunPCA(LGE_fetal_MSN_HD, features = VariableFeatures(object = LGE_fetal_MSN_HD), npcs = 50, reduction.name = "pca")
+ElbowPlot(LGE_fetal_MSN_HD, reduction = "pca", ndims = 50)
+num_dims <- 40
+LGE_fetal_MSN_HD <- RunUMAP(LGE_fetal_MSN_HD, dims = 1:num_dims, reduction = "pca", reduction.name = "umap", reduction.key = "umap")
+DimPlot(LGE_fetal_MSN_HD, group.by = "celltype", reduction = "umap", pt.size = 1)
+ggsave("UMAP_LGE_fetal_HD_MSN_celltype.pdf", width = 8, height = 8)
+```
+
+
+```R
+phaseC_genes_LGE_fetal_MSN_HD <- intersect(colnames(phase_test), rownames(LGE_fetal_MSN_HD))
+phaseC_genes_notExpLGE_fetal_MSN_HD_names <- setdiff(colnames(phase_test), rownames(LGE_fetal_MSN_HD))
+phaseC_genes_notExpLGE_fetal_MSN_HD <- matrix(data = 0, nrow = length(phaseC_genes_notExpLGE_fetal_MSN_HD_names), ncol = dim(LGE_fetal_MSN_HD@assays$SCT$data)[2])
+rownames(phaseC_genes_notExpLGE_fetal_MSN_HD) <- phaseC_genes_notExpLGE_fetal_MSN_HD_names
+colnames(phaseC_genes_notExpLGE_fetal_MSN_HD) <- colnames(LGE_fetal_MSN_HD@assays$SCT$data)
+phase_counts_LGE_fetal_MSN_HD <- LGE_fetal_MSN_HD@assays$SCT$data[phaseC_genes_LGE_fetal_MSN_HD, ]
+phase_counts_LGE_fetal_MSN_HD <- rbind(phase_counts_LGE_fetal_MSN_HD, phaseC_genes_notExpLGE_fetal_MSN_HD)
+
+phase_counts_LGE_fetal_MSN_HD <- phase_counts_LGE_fetal_MSN_HD[colnames(phase_test), ]
+phase_test_LGE_fetal_MSN_HD <- data.frame(t(phase_counts_LGE_fetal_MSN_HD))
+head(phase_test_LGE_fetal_MSN_HD)
+```
+
+
+```R
+class_thr <- 0.7
+predicted_phase_test_LGE_fetal_MSN_HD_wprob <- predict(model_phase, newx = as.matrix(phase_test_LGE_fetal_MSN_HD), s = lambda_val, type = "response") #glmnet
+predicted_phase_test_LGE_fetal_MSN_HD <- rep("A-B", dim(predicted_phase_test_LGE_fetal_MSN_HD_wprob)[1])  
+predicted_phase_test_LGE_fetal_MSN_HD[which(predicted_phase_test_LGE_fetal_MSN_HD_wprob > class_thr)] <- "C-D-E" #glmnet
+LGE_fetal_MSN_HD[["PREDICTED_PHASE"]] <- NA
+LGE_fetal_MSN_HD@meta.data[rownames(predicted_phase_test_LGE_fetal_MSN_HD_wprob), "PREDICTED_PHASE"] <- predicted_phase_test_LGE_fetal_MSN_HD
+LGE_fetal_MSN_HD[["PROB_PHASE_CDE"]] <- NA
+LGE_fetal_MSN_HD@meta.data[rownames(predicted_phase_test_LGE_fetal_MSN_HD_wprob), "PROB_PHASE_CDE"] <- predicted_phase_test_LGE_fetal_MSN_HD_wprob
+```
+
+
+```R
+thr <- 0.7
+100 - 100*length(which(predicted_phase_test_LGE_fetal_MSN_HD_wprob > thr))/length(predicted_phase_test_LGE_fetal_MSN_HD_wprob)
+```
+
+
+```R
+DimPlot(LGE_fetal_MSN_HD, group.by = "PREDICTED_PHASE", reduction = "umap", pt.size = 1)
+ggsave("UMAP_LGE_fetal_MSN_HD_PREDPHASE.pdf", width = 8, height = 8)
+FeaturePlot(LGE_fetal_MSN_HD, features = "PROB_PHASE_CDE", cols = c("blue", "red"), pt.size = 1, reduction = "umap")
+ggsave("UMAP_LGE_fetal_MSN_HD_PROBPREDPHASE.pdf", width = 8, height = 8)
 ```
