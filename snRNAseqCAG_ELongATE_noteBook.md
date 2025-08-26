@@ -60,14 +60,16 @@ library("descriptio")
 library("gridExtra")
 library("ggpubr")
 library("weights")
-setwd("/path/to/results/")
+library("patchwork")
+library("ggplotify")
+setwd("/path/to/wd")
 ```
 
 # Read_Handsaker_metadata
 
 
 ```R
-pb_metadata_file <- "PROJECT_ELongATE/Handsaker/Analysis_bag_6_Broad_Huntingtons_Caudate_2024_PacBio_Metadata_Open/pacbio_deepdives_cells_unfiltered.txt"
+pb_metadata_file <- "Handsaker/Analysis_bag_6_Broad_Huntingtons_Caudate_2024_PacBio_Metadata_Open/pacbio_deepdives_cells_unfiltered.txt"
 pb_metadata <- read.table(pb_metadata_file, sep = "\t", header = TRUE)
 sample_name <- gsub(pattern = '(.*)_\\w+', replacement = '\\1', pb_metadata$CELL_BARCODE)
 CB <- gsub(pattern = '.*_(\\w+)', replacement = '\\1', pb_metadata$CELL_BARCODE)
@@ -94,7 +96,7 @@ num_cells_Handsaker <- do.call(rbind, tmp)
 
 
 ```R
-h5_files <- list.files(path = "PROJECT_ELongATE/Handsaker/", pattern = "\\.h5$", full.names = TRUE)
+h5_files <- list.files(path = "Handsaker/", pattern = "\\.h5$", full.names = TRUE)
 names(h5_files) <- gsub(x = basename(h5_files), pattern = "\\.umi.*", replacement = "")
 ```
 
@@ -351,13 +353,13 @@ names(h5_files)
 # #                 add.cell.ids = c("S02205", "S04002", "S04577", "S05202", "S05368", "S06758", "S07681", "S09619", "S12365"),
 # #                  project = "snRNAseqCAG")
 
-# saveRDS(object = SPN_all, file = "SPN_all.rds")
+# saveRDS(object = SPN_all, file = "SPN_all_raw.rds")
 ```
 
 
 ```R
 #load dataset with SPNs from all samples
-SPN_all <- readRDS("SPN_all.rds")
+SPN_all <- readRDS("SPN_all_raw.rds")
 ```
 
 
@@ -417,8 +419,93 @@ SPN_all <- RunUMAP(SPN_all, dims = 1:num_dims, reduction = "pca", reduction.name
 
 
 ```R
+#do clustering
+SPN_all <- FindNeighbors(SPN_all, reduction = "pca", dims = 1:num_dims)
+SPN_all <- FindClusters(SPN_all, resolution = 0.01, method = 4)
+DimPlot(SPN_all, reduction = "umap", group.by = "seurat_clusters", pt.size = 1)
+ggsave("UMAP_Handsaker_clusters.pdf", width = 8, height = 8)
+```
+
+
+```R
+table(SPN_all@meta.data$seurat_clusters)
+```
+
+
+```R
+#find gene markers for the two clusters
+SPN_all <- PrepSCTFindMarkers(SPN_all, assay = "SCT", verbose = TRUE)
+
+# find markers for every cluster compared to all remaining cells, report only the positive ones
+SPN_all.markers <- FindAllMarkers(SPN_all, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25, assay = "SCT")
+
+#find the top marker for each cluster and plot their expression values
+SPN_all_top_marker <- SPN_all.markers %>%
+  group_by(cluster) %>%
+  slice_max(n = 1, order_by = avg_log2FC)
+
+####################################
+# num_genes_plot <- 10
+# if (length(SPN_all_top_marker) < num_genes_plot) {
+#   chunks_genes <- list(1:length(SPN_all_top_marker))
+# } else {
+#   chunks_genes <- split(1:length(SPN_all_top_marker), ceiling(seq(from = 1, to = length(SPN_all_top_marker))/num_genes_plot))
+# }
+
+# #plot normalized counts
+# for (i in 1:length(chunks_genes)) {
+#     p <- VlnPlot(SPN_all, features = SPN_all_top_marker$gene[chunks_genes[[i]]]) 
+#     #+ ggtitle("Normalized counts for top markers")
+#     plot(p)
+#     ggsave(paste0("Handsaker_Normalized_MarkerGeneCounts_chunk", i, ".pdf"), device = pdf, height = 8, width = 8)
+# }
+```
+
+
+```R
+saveRDS(object = SPN_all, file = "SPN_all.rds")
+```
+
+
+```R
+# SPN_all <- readRDS("SPN_all.rds")
+```
+
+
+```R
+table(SPN_all@meta.data$seurat_clusters)
+```
+
+
+```R
+#extract top 10 markers for each cluster and plot heatmap
+# find markers for every cluster compared to all remaining cells, report only the positive ones
+SPN_all.markers <- FindAllMarkers(SPN_all, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25, assay = "SCT")
+
+#find the top marker for each cluster and plot their expression values
+SPN_all_top_marker <- SPN_all.markers %>%
+  group_by(cluster) %>%
+  slice_max(n = 1, order_by = avg_log2FC)
+SPN_all_top_10_markers <- SPN_all.markers %>%
+  group_by(cluster) %>%
+  top_n(n = 10, wt = avg_log2FC)
+
+p <- DoHeatmap(SPN_all, features = SPN_all_top_10_markers$gene) + NoLegend() + ggtitle("Heatmap with top 10 marker genes per cluster")
+plot(p)
+ggsave("Handsaker_Heatmap_top10MarkerGeneCounts.pdf", device = pdf, height = 8, width = 16)
+```
+
+
+```R
+SPN_all_top_10_markers
+```
+
+
+```R
 #do plots
 options(repr.plot.width=20, repr.plot.height=20) 
+DimPlot(SPN_all, reduction = "umap", group.by = "seurat_clusters", pt.size = 1)
+ggsave("UMAP_Handsaker_clusters.pdf", width = 8, height = 8)
 FeaturePlot(SPN_all, reduction = "umap", features = "CAGLENGTH", cols = c("blue", "red"), pt.size = 1)
 ggsave("UMAP_Handsaker_CAGLENGTH.pdf", width = 8, height = 8)
 FeaturePlot(SPN_all, reduction = "umap", features = "EXP_CAGLENGTH", cols = c("blue", "red"), pt.size = 1)
@@ -439,63 +526,8 @@ ggsave("UMAP_Handsaker_splitBySample.pdf", width = 20, height = 20)
 
 
 ```R
-#do clustering
-SPN_all <- FindNeighbors(SPN_all, reduction = "pca", dims = 1:num_dims)
-SPN_all <- FindClusters(SPN_all, resolution = 0.01, method = 4)
-DimPlot(SPN_all, reduction = "umap", group.by = "seurat_clusters", pt.size = 1)
-ggsave("UMAP_Handsaker_clusters.pdf", width = 8, height = 8)
-```
-
-
-```R
-#find gene markers for the two clusters
-SPN_all <- PrepSCTFindMarkers(SPN_all, assay = "SCT", verbose = TRUE)
-
-# find markers for every cluster compared to all remaining cells, report only the positive ones
-SPN_all.markers <- FindAllMarkers(SPN_all, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25, assay = "SCT")
-
-#find the top marker for each cluster and plot their expression values
-SPN_all_top_marker <- SPN_all.markers %>%
-  group_by(cluster) %>%
-  slice_max(n = 1, order_by = avg_log2FC)
-
-# num_genes_plot <- 10
-# if (length(SPN_all_top_marker) < num_genes_plot) {
-#   chunks_genes <- list(1:length(SPN_all_top_marker))
-# } else {
-#   chunks_genes <- split(1:length(SPN_all_top_marker), ceiling(seq(from = 1, to = length(SPN_all_top_marker))/num_genes_plot))
-# }
-
-# #plot normalized counts
-# for (i in 1:length(chunks_genes)) {
-#     p <- VlnPlot(SPN_all, features = SPN_all_top_marker$gene[chunks_genes[[i]]]) 
-#     #+ ggtitle("Normalized counts for top markers")
-#     plot(p)
-#     ggsave(paste0("Handsaker_Normalized_MarkerGeneCounts_chunk", i, ".pdf"), device = pdf, height = 8, width = 8)
-# }
-```
-
-
-```R
-#extract top 10 markers for each cluster and plot heatmap
-SPN_all_top_10_markers <- SPN_all.markers %>%
-  group_by(cluster) %>%
-  top_n(n = 10, wt = avg_log2FC)
-
-p <- DoHeatmap(SPN_all, features = SPN_all_top_10_markers$gene) + NoLegend() + ggtitle("Heatmap with top 10 marker genes per cluster")
-plot(p)
-ggsave("Handsaker_Heatmap_top10MarkerGeneCounts.pdf", device = pdf, height = 8, width = 16)
-```
-
-
-```R
-SPN_all_top_10_markers
-```
-
-
-```R
 #read phase C-D file with all genes
-phaseCD_all_file <- "PROJECT_ELongATE/PhaseCD_all.txt"
+phaseCD_all_file <- "PhaseCD_all.txt"
 
 phaseCD_genes_all <- read.table(phaseCD_all_file, sep = "\t", header = TRUE)
 rownames(phaseCD_genes_all) <- phaseCD_genes_all$Gene
@@ -506,7 +538,7 @@ phaseCD_genes_all[intersect(rownames(phaseCD_genes_all), SPN_all_top_10_markers[
 
 ```R
 #create file with only phase C-, C+ and D genes
-phaseCD_file <- "PROJECT_ELongATE/PhaseCD.txt"
+phaseCD_file <- "PhaseCD.txt"
 system(command = paste0("cat ", phaseCD_all_file, " | awk 'BEGIN {FS=\"\t\"} { if ($8 != NA) print }' > ", phaseCD_file))
 ```
 
@@ -514,28 +546,29 @@ system(command = paste0("cat ", phaseCD_all_file, " | awk 'BEGIN {FS=\"\t\"} { i
 ```R
 #filter only SPNs from cluster 0
 SPN_all_unfiltered <- SPN_all
-SPN_all <- subset(x = SPN_all, subset = seurat_clusters == "0")
+SPN_filt <- subset(x = SPN_all, subset = seurat_clusters == "0")
 ```
 
 
 ```R
-# saveRDS(object = SPN_all, file = "SPN_filtered.rds")
+saveRDS(object = SPN_filt, file = "SPN_filtered.rds")
 ```
 
 
 ```R
-# SPN_all <- readRDS("SPN_filtered.rds")
+# SPN_filt <- readRDS("SPN_filtered.rds")
 ```
 
 
 ```R
+num_dims <- 40
 #sample S04577 is CTRL -> filter out from HD samples
-SPN_HD <- subset(x = SPN_all, subset = SAMPLE != "S04577")
+SPN_HD <- subset(x = SPN_filt, subset = SAMPLE != "S04577")
 #Run PCA and UMAP on HD samples
 SPN_HD <- RunPCA(SPN_HD, features = VariableFeatures(object = SPN_HD), npcs = 50, reduction.name = "pca")
 SPN_HD <- RunUMAP(SPN_HD, dims = 1:num_dims, reduction = "pca", reduction.name = "umap", reduction.key = "umap")
 #Run PCA and UMAP on CTRL sample
-SPN_CTRL <- subset(x = SPN_all, subset = SAMPLE == "S04577")
+SPN_CTRL <- subset(x = SPN_filt, subset = SAMPLE == "S04577")
 SPN_CTRL <- RunPCA(SPN_CTRL, features = VariableFeatures(object = SPN_CTRL), npcs = 50, reduction.name = "pca")
 SPN_CTRL <- RunUMAP(SPN_CTRL, dims = 1:num_dims, reduction = "pca", reduction.name = "umap", reduction.key = "umap")
 ```
@@ -568,7 +601,6 @@ ggsave("UMAP_Handsaker_CTRL_clusters_cleaned_splitBySampleMerged.pdf", width = 8
 
 
 ```R
-#do plots for CAG size of HD samples
 #do plots for CAG size of HD samples
 p <- ggplot(SPN_HD@meta.data, aes(x = CAGLENGTH)) +
 geom_histogram(binwidth = 5, alpha = 0.5, position = "identity", fill = "#F8766D") +
@@ -653,11 +685,45 @@ plot(p)
 ggsave("Handsaker_CAGLENGTH_hist_phaseC_splitBySample.pdf", width = 8, height = 8)
 ```
 
+
+```R
+Handsaker_donor_metadata <- read.table("Handsaker/donor_metadata.txt", header = TRUE)
+Handsaker_donor_metadata <- Handsaker_donor_metadata[which(Handsaker_donor_metadata$SID %in% unique(SPN_all$DONOR)), ]
+rownames(Handsaker_donor_metadata) <- Handsaker_donor_metadata$SID
+Handsaker_donor_metadata
+```
+
+
+```R
+tmp_Handsaker <- do.call(rbind,lapply(split(SPN_HD@meta.data$PHASE, SPN_HD@meta.data$SAMPLE), function(x) {
+    tab <- table(x)
+}))
+
+#tmp_Handsaker
+HD_Handsaker_fract_CDE <- data.frame(DATASET = "Handsaker_Caudate", SAMPLE = rownames(tmp_Handsaker), FRACT_CDE=100*tmp_Handsaker[, 2]/(tmp_Handsaker[, 1] + tmp_Handsaker[, 2]), NUM_SPN=tmp_Handsaker[, 1] + tmp_Handsaker[, 2])
+HD_Handsaker_fract_CDE$GRADE <- Handsaker_donor_metadata[rownames(HD_Handsaker_fract_CDE), "VS_Grade"]
+HD_Handsaker_fract_CDE$FRACT_SPN <- num_cells_Handsaker[rownames(HD_Handsaker_fract_CDE), "num_spns"]/num_cells_Handsaker[rownames(HD_Handsaker_fract_CDE), "num_cells"]
+HD_Handsaker_fract_CDE$GRADE <- factor(HD_Handsaker_fract_CDE$GRADE, levels = c("n/a", "HD-0", "HD-1", "HD-2", "HD-3"))
+HD_Handsaker_fract_CDE
+```
+
+
+```R
+ggplot(HD_Handsaker_fract_CDE, aes(x = GRADE, y = FRACT_CDE, size = FRACT_SPN)) +
+geom_point(aes(size = FRACT_SPN), color = "#F8766D", alpha = 0.8, position = position_jitter(width = 0, height = 0)) +
+#scale_color_manual(values =c("#F8766D")) +
+theme_classic() +
+xlab("HD Grade") +
+ylim(c(0, 25)) +
+ylab("Fraction cells in C-D-E phase (%)")
+ggsave("HD_Handsaker_fraction_CDE.pdf", width = 6, height = 6)
+```
+
 # Read_phaseC_genes
 
 
 ```R
-phaseC_file <- "PROJECT_ELongATE/PhaseCD.txt"
+phaseC_file <- "PhaseCD.txt"
 
 phaseC_genes_all <- read.table(phaseC_file, sep = "\t", header = TRUE)
 phaseC_genes <- phaseC_genes_all$Gene
@@ -761,7 +827,12 @@ model_phase <- cv.glmnet(as.matrix(phase_training_noNA),
 
 
 ```R
-# saveRDS(model_phase, "Phase_model.rds")
+saveRDS(model_phase, "Phase_model.rds")
+```
+
+
+```R
+# model_phase <- readRDS("Phase_model.rds")
 ```
 
 
@@ -849,12 +920,12 @@ ggsave("UMAP_Handsaker_CTRL_clusters_cleaned_PREDICTED_PHASE.pdf", width = 8, he
 
 
 ```R
-SPN_all <- merge(SPN_HD, SPN_CTRL)
+SPN_HD_CTRL <- merge(SPN_HD, SPN_CTRL)
 ```
 
 
 ```R
-head(SPN_all)
+head(SPN_HD_CTRL)
 ```
 
 # Define training and test set for CAG sizing model
@@ -900,40 +971,6 @@ dim(training_test_data)
 summary(CAGLENGTH_SPN_sized)
 length(sort(CAGLENGTH_SPN_sized))
 head(training_data)
-```
-
-
-```R
-Handsaker_donor_metadata <- read.table("PROJECT_ELongATE/Handsaker/donor_metadata.txt", header = TRUE)
-Handsaker_donor_metadata <- Handsaker_donor_metadata[which(Handsaker_donor_metadata$SID %in% unique(SPN_all$DONOR)), ]
-rownames(Handsaker_donor_metadata) <- Handsaker_donor_metadata$SID
-Handsaker_donor_metadata
-```
-
-
-```R
-tmp_Handsaker <- do.call(rbind,lapply(split(SPN_HD@meta.data$PHASE, SPN_HD@meta.data$SAMPLE), function(x) {
-    tab <- table(x)
-}))
-
-#tmp_Handsaker
-HD_Handsaker_fract_CDE <- data.frame(DATASET = "Handsaker_Caudate", SAMPLE = rownames(tmp_Handsaker), FRACT_CDE=100*tmp_Handsaker[, 2]/(tmp_Handsaker[, 1] + tmp_Handsaker[, 2]), NUM_SPN=tmp_Handsaker[, 1] + tmp_Handsaker[, 2])
-HD_Handsaker_fract_CDE$GRADE <- Handsaker_donor_metadata[rownames(HD_Handsaker_fract_CDE), "VS_Grade"]
-HD_Handsaker_fract_CDE$FRACT_SPN <- num_cells_Handsaker[rownames(HD_Handsaker_fract_CDE), "num_spns"]/num_cells_Handsaker[rownames(HD_Handsaker_fract_CDE), "num_cells"]
-HD_Handsaker_fract_CDE$GRADE <- factor(HD_Handsaker_fract_CDE$GRADE, levels = c("n/a", "HD-0", "HD-1", "HD-2", "HD-3"))
-HD_Handsaker_fract_CDE
-```
-
-
-```R
-ggplot(HD_Handsaker_fract_CDE, aes(x = GRADE, y = FRACT_CDE, size = FRACT_SPN)) +
-geom_point(aes(size = FRACT_SPN), color = "#F8766D", alpha = 0.8, position = position_jitter(width = 0, height = 0)) +
-#scale_color_manual(values =c("#F8766D")) +
-theme_classic() +
-xlab("HD Grade") +
-ylim(c(0, 25)) +
-ylab("Fraction cells in C-D-E phase (%)")
-ggsave("HD_Handsaker_fraction_CDE.pdf", width = 6, height = 6)
 ```
 
 
@@ -1003,17 +1040,14 @@ Handsaker_donor_metadata_full <- rbind(Handsaker_donor_metadata_HD, Handsaker_do
 
 
 ```R
-#plot fraction of SPN in CDE phase in the test set
-cor_predFractCDE_fractCDE <- weighted.cor(x = Handsaker_donor_metadata_full$FRACT_CDE_TEST, y = Handsaker_donor_metadata_full$PRED_FRACT_CDE_TEST, weights = Handsaker_donor_metadata_full$NUM_SPN_TEST, method = "pearson", na.rm=TRUE)
-ggplot(Handsaker_donor_metadata_full, aes(x=100*FRACT_CDE_TEST, y=100*PRED_FRACT_CDE_TEST, size = NUM_SPN_TEST)) + 
-  geom_point(color = "blue") +
-  geom_smooth(method=lm, se=TRUE, mapping = aes(weight = NUM_SPN_TEST)) +
-  theme_classic() +
-  xlab("Fraction cells in C-D-E phase (%)") +
-  ylab("Predicted fraction cells in C-D-E phase (%)")
+str(Handsaker_donor_metadata_HD)
+str(Handsaker_donor_metadata_full)
+```
 
-sprintf("Sp. corr = %.2f", cor_predFractCDE_fractCDE)
-ggsave("Handsaker_fraction_SPN_CDE_phase_test_set.pdf", width = 8, height = 8)
+
+```R
+#wtd.cor(x = Handsaker_donor_metadata_HD$GERM_CAGEXP, y = Handsaker_donor_metadata_HD$FRACT_CDE, weight = Handsaker_donor_metadata_HD$NUM_SPN)
+#wtd.cor(x = Handsaker_donor_metadata_HD$CAP, y = Handsaker_donor_metadata_HD$FRACT_CDE, weight = Handsaker_donor_metadata_HD$NUM_SPN)
 ```
 
 
@@ -1028,12 +1062,6 @@ ggplot(Handsaker_donor_metadata_HD, aes(x=CAP, y=100*FRACT_CDE, size = NUM_SPN))
   ylab("Fraction cells in C-D-E phase (%)")
 sprintf("Sp. corr = %.2f", cor_CAP_fractCDE)
 ggsave("Handsaker_fraction_SPN_CDE_phase_CAP.pdf", width = 8, height = 8)
-```
-
-
-```R
-str(Handsaker_donor_metadata_HD)
-str(Handsaker_donor_metadata_full)
 ```
 
 
@@ -1054,8 +1082,17 @@ ggsave("Handsaker_numCAGGermline_vs_fraction_SPN_CDE.pdf", width = 8, height = 8
 
 
 ```R
-#wtd.cor(x = Handsaker_donor_metadata_HD$GERM_CAGEXP, y = Handsaker_donor_metadata_HD$FRACT_CDE, weight = Handsaker_donor_metadata_HD$NUM_SPN)
-#wtd.cor(x = Handsaker_donor_metadata_HD$CAP, y = Handsaker_donor_metadata_HD$FRACT_CDE, weight = Handsaker_donor_metadata_HD$NUM_SPN)
+#plot fraction of SPN in CDE phase in the test set
+cor_predFractCDE_fractCDE <- weighted.cor(x = Handsaker_donor_metadata_full$FRACT_CDE_TEST, y = Handsaker_donor_metadata_full$PRED_FRACT_CDE_TEST, weights = Handsaker_donor_metadata_full$NUM_SPN_TEST, method = "pearson", na.rm=TRUE)
+ggplot(Handsaker_donor_metadata_full, aes(x=100*FRACT_CDE_TEST, y=100*PRED_FRACT_CDE_TEST, size = NUM_SPN_TEST)) + 
+  geom_point(color = "blue") +
+  geom_smooth(method=lm, se=TRUE, mapping = aes(weight = NUM_SPN_TEST)) +
+  theme_classic() +
+  xlab("Fraction cells in C-D-E phase (%)") +
+  ylab("Predicted fraction cells in C-D-E phase (%)")
+
+sprintf("Sp. corr = %.2f", cor_predFractCDE_fractCDE)
+ggsave("Handsaker_fraction_SPN_CDE_phase_test_set.pdf", width = 8, height = 8)
 ```
 
 # Learn_CAG_model
@@ -1068,7 +1105,10 @@ CAG_THR <- 150
 
 training_data_filtered <- training_data[which(training_data$CAGLENGTH_SPN_sized > CAG_THR), ]
 expr_C_training_filtered <- training_data_filtered[, -1]
+```
 
+
+```R
 #learn CAG sizing model
 fit_glm <- cv.glmnet(as.matrix(expr_C_training_filtered), as.vector(training_data_filtered[, 1]))    
 ```
@@ -1076,6 +1116,11 @@ fit_glm <- cv.glmnet(as.matrix(expr_C_training_filtered), as.vector(training_dat
 
 ```R
 saveRDS(fit_glm, "CAG_sizing_model.rds")
+```
+
+
+```R
+# fit_glm <- readRDS("CAG_sizing_model.rds")
 ```
 
 
@@ -1295,17 +1340,23 @@ results_training_phaseC_measured <- results_training[which(results_training$CAG_
 
 #plot correlation between CAG sizing measured values and predictions
 Evaluate_correlation <- function(Data, x, y, quant_thr = 1, abl = TRUE, notes = "") {
+  #correlation <- cor(Data[, x], Data[, y], method = "pearson", use = "complete.obs")
   correlation <- cor(Data[, x], Data[, y], method = "spearman", use = "complete.obs")
+  
   pdf(paste0("AccuracyPred_", notes, ".pdf"))
-  smoothScatter(Data[, x], Data[, y], xlab = x, ylab = y, cex.main = 0.6, cex.axis = 0.8,
+  if (abl) {
+    smoothScatter(Data[, x], Data[, y], xlab = x, ylab = y, cex.main = 0.6, cex.axis = 0.8,
                 xlim = c(0, quantile(c(Data[, x], Data[, y]), quant_thr, na.rm = TRUE)), 
                 ylim = c(0, quantile(c(Data[, x], Data[, y]), quant_thr, na.rm = TRUE)))
-  
-  if (abl) {
     abline(0, 1, col = "green")
+  } else {
+      smoothScatter(Data[, x], Data[, y], xlab = x, ylab = y, cex.main = 0.6, cex.axis = 0.8,
+                xlim = c(0, quantile(c(Data[, x], Data[, y]), quant_thr, na.rm = TRUE)), 
+                ylim = c(0, quantile(c(Data[, x], Data[, y]), quant_thr, na.rm = TRUE)))
   }
   dev.off()
-    
+  
+  #smoothScatter(Data[, x], Data[, y], xlab = x, main = paste0(y, " VS ", x, "\n r Pearson. = ",
   smoothScatter(Data[, x], Data[, y], xlab = x, main = paste0(y, " VS ", x, "\n r Spearman = ",
                 sprintf("%.2f", correlation), "\n ", notes, " - n = ", dim(Data)[1]), ylab = y, cex.main = 0.6, cex.axis = 0.8,
                 xlim = c(0, quantile(c(Data[, x], Data[, y]), quant_thr, na.rm = TRUE)), ylim = c(0, quantile(c(Data[, x], Data[, y]), quant_thr, na.rm = TRUE)))
@@ -1314,6 +1365,7 @@ Evaluate_correlation <- function(Data, x, y, quant_thr = 1, abl = TRUE, notes = 
     abline(0, 1, col = "green")
   }
     
+  #print(paste0(y, " VS ", x, "\n r Pearson. = ", 
   print(paste0(y, " VS ", x, "\n r Spearman = ", 
               sprintf("%.2f", correlation), "\n ", notes, " - n = ", dim(Data)[1]))
   
@@ -1343,6 +1395,7 @@ print(gsub(x = notes, pattern = "_", replacement = " "))
   plot(p)
   
   ggsave(paste0("AccuracyPred_hist_", notes, ".pdf"), width = 8, height = 8)
+  #return(p)
 }
 
 Evaluate_correlation(results_training_filtered, "CAG_measured", "CAG_predicted", notes = "Training_set_Filtered_SPN", quant_thr = 0.999)
@@ -1411,19 +1464,27 @@ table(predicted_phase_all_CTRL)
 
 ```R
 #import Lee counts
-Lee_counts <- Read10X("PROJECT_ELongATE/Lee/renamed_data")
+Lee_counts <- Read10X("Lee/data/renamed_data")
 #create single-cell experiment
 Lee_sce <- SingleCellExperiment(list(counts = Lee_counts))
 #create Seurat object
 Lee <- CreateSeuratObject(counts(Lee_sce), project = "Lee", min.cells = 0, min.features = 0)
 #read metadata
-Lee_metadata <- read.table("PROJECT_ELongATE/Lee/renamed_data/GSE152058_human_snRNA_processed_coldata.tsv", header = TRUE, sep = "\t")
+Lee_metadata <- read.table("Lee/data/renamed_data/GSE152058_human_snRNA_processed_coldata.tsv", header = TRUE, sep = "\t")
 #Lee_metadata
 #table(Lee_metadata$CellType)
 rownames(Lee_metadata) <- Lee_metadata$Barcode
 Lee@meta.data <- cbind(Lee@meta.data, Lee_metadata[rownames(Lee@meta.data), ])
 #head(Lee@meta.data)
 Lee[["percent.mt"]] <- PercentageFeatureSet(Lee, pattern = "^MT-")
+```
+
+
+```R
+#read metadata
+Lee_metadata <- read.table("Lee/data/renamed_data/GSE152058_human_snRNA_processed_coldata.tsv", header = TRUE, sep = "\t")
+#Lee_metadata
+table(Lee_metadata$CellType)
 ```
 
 
@@ -1507,14 +1568,14 @@ DimPlot(Lee_CTRL_MSN_Caudate, group.by = "Batch", reduction = "harmony", pt.size
 
 
 ```R
-# saveRDS(object = Lee_HD_MSN_Caudate, file = "PROJECT_ELongATE/Lee/renamed_data/Lee_HD_MSN_Caudate.rds")
-# saveRDS(object = Lee_CTRL_MSN_Caudate, file = "PROJECT_ELongATE/Lee/renamed_data/Lee_CTRL_MSN_Caudate.rds")
+saveRDS(object = Lee_HD_MSN_Caudate, file = "Lee/data/renamed_data/Lee_HD_MSN_Caudate.rds")
+saveRDS(object = Lee_CTRL_MSN_Caudate, file = "Lee/data/renamed_data/Lee_CTRL_MSN_Caudate.rds")
 ```
 
 
 ```R
-# Lee_HD_MSN_Caudate <- readRDS("PROJECT_ELongATE/Lee/renamed_data/Lee_HD_MSN_Caudate.rds")
-# Lee_CTRL_MSN_Caudate <- readRDS("PROJECT_ELongATE/Lee/renamed_data/Lee_CTRL_MSN_Caudate.rds")
+# Lee_HD_MSN_Caudate <- readRDS("Lee/data/renamed_data/Lee_HD_MSN_Caudate.rds")
+# Lee_CTRL_MSN_Caudate <- readRDS("Lee/data/renamed_data/Lee_CTRL_MSN_Caudate.rds")
 ```
 
 
@@ -1737,6 +1798,10 @@ cat(sprintf("Num. features = %d; Num. SPN = %d\n", dim(Lee_CTRL_MSN_Putamen)[1],
 #Run PCA and UMAP for CTRL donors
 Lee_CTRL_MSN_Putamen <- RunPCA(Lee_CTRL_MSN_Putamen, features = VariableFeatures(object = Lee_CTRL_MSN_Putamen), npcs = 50, reduction.name = "pca")
 ElbowPlot(Lee_CTRL_MSN_Putamen, reduction = "pca", ndims = 50)
+```
+
+
+```R
 num_dims <- 40
 Lee_CTRL_MSN_Putamen <- RunUMAP(Lee_CTRL_MSN_Putamen, dims = 1:num_dims, reduction = "pca", reduction.name = "umap", reduction.key = "umap")
 DimPlot(Lee_CTRL_MSN_Putamen, group.by = "Batch", reduction = "umap", pt.size = 1)
@@ -1749,14 +1814,14 @@ DimPlot(Lee_CTRL_MSN_Putamen, group.by = "Batch", reduction = "harmony", pt.size
 
 
 ```R
-# saveRDS(object = Lee_HD_MSN_Putamen, file = "PROJECT_ELongATE/Lee/renamed_data/Lee_HD_MSN_Putamen.rds")
-# saveRDS(object = Lee_CTRL_MSN_Putamen, file = "PROJECT_ELongATE/Lee/renamed_data/Lee_CTRL_MSN_Putamen.rds")
+saveRDS(object = Lee_HD_MSN_Putamen, file = "Lee/data/renamed_data/Lee_HD_MSN_Putamen.rds")
+saveRDS(object = Lee_CTRL_MSN_Putamen, file = "Lee/data/renamed_data/Lee_CTRL_MSN_Putamen.rds")
 ```
 
 
 ```R
-# Lee_HD_MSN_Putamen <- readRDS("PROJECT_ELongATE/Lee/renamed_data/Lee_HD_MSN_Putamen.rds")
-# Lee_CTRL_MSN_Putamen <- readRDS("PROJECT_ELongATE/Lee/renamed_data/Lee_CTRL_MSN_Putamen.rds")
+# Lee_HD_MSN_Putamen <- readRDS("Lee/data/renamed_data/Lee_HD_MSN_Putamen.rds")
+# Lee_CTRL_MSN_Putamen <- readRDS("Lee/data/renamed_data/Lee_CTRL_MSN_Putamen.rds")
 ```
 
 
@@ -1969,7 +2034,7 @@ colnames(Lee_CTRL_MSN_Putamen@meta.data)
 
 
 ```R
-Paryani <- readRDS("PROJECT_ELongATE/Paryani/neuron_hd_obj_acc_caud_paper.rds")
+Paryani <- readRDS("Paryani/neuron_hd_obj_acc_caud_paper.rds")
 ```
 
 
@@ -2176,15 +2241,15 @@ fract_CDE_tmp_Caudate <- lapply(split(Paryani_HD_MSN_Caudate@meta.data, Paryani_
     return(rbind(fraction_CDE, num_SPN, num_CAG))
 })
 fract_CDE_Caudate <- t(do.call(cbind, fract_CDE_tmp_Caudate))
-fract_CDE_Caudate <- data.frame(num_CAG_germ = as.numeric(fract_CDE_Caudate[, 3]), fract_CDE = as.numeric(fract_CDE_Caudate[, 1]), num_SPN = as.numeric(fract_CDE_Caudate[, 2]))
+fract_CDE_Paryani_Caudate <- data.frame(num_CAG_germ = as.numeric(fract_CDE_Caudate[, 3]), fract_CDE = as.numeric(fract_CDE_Caudate[, 1]), num_SPN = as.numeric(fract_CDE_Caudate[, 2]))
 #cor_numCAGGerm_fractCDE_Caudate <- cor(x = fract_CDE_Caudate$num_CAG_germ, y = fract_CDE_Caudate$fract_CDE, method = "pearson", use="complete.obs")
 
-cor_numCAGGerm_fractCDE_Caudate <- weighted.cor(x = fract_CDE_Caudate$num_CAG_germ, y = fract_CDE_Caudate$fract_CDE, weights = fract_CDE_Caudate$num_SPN, method = "pearson", na.rm = TRUE)
+cor_numCAGGerm_fractCDE_Paryani_Caudate <- weighted.cor(x = fract_CDE_Paryani_Caudate$num_CAG_germ, y = fract_CDE_Paryani_Caudate$fract_CDE, weights = fract_CDE_Paryani_Caudate$num_SPN, method = "pearson", na.rm = TRUE)
 
-print(cor_numCAGGerm_fractCDE_Caudate)
+print(cor_numCAGGerm_fractCDE_Paryani_Caudate)
 #plot(x = fract_CDE_Caudate$num_CAG_germ, y = fract_CDE_Caudate$fract_CDE)
 
-ggplot(fract_CDE_Caudate, aes(x=num_CAG_germ, y=100*fract_CDE)) + 
+ggplot(fract_CDE_Paryani_Caudate, aes(x=num_CAG_germ, y=100*fract_CDE)) + 
   geom_point(col = "blue", aes(size = num_SPN))+
   geom_smooth(method=lm, se = TRUE, mapping = aes(weight = num_SPN)) +
   theme_classic() +
@@ -2488,15 +2553,15 @@ fract_CDE_tmp_Accumbens <- lapply(split(Paryani_HD_MSN_Accumbens@meta.data, Pary
     return(rbind(fraction_CDE, num_SPN, num_CAG))
 })
 fract_CDE_Accumbens <- t(do.call(cbind, fract_CDE_tmp_Accumbens))
-fract_CDE_Accumbens <- data.frame(num_CAG_germ = as.numeric(fract_CDE_Accumbens[, 3]), fract_CDE = as.numeric(fract_CDE_Accumbens[, 1]), num_SPN = as.numeric(fract_CDE_Accumbens[, 2]))
+fract_CDE_Paryani_Accumbens <- data.frame(num_CAG_germ = as.numeric(fract_CDE_Accumbens[, 3]), fract_CDE = as.numeric(fract_CDE_Accumbens[, 1]), num_SPN = as.numeric(fract_CDE_Accumbens[, 2]))
 #cor_numCAGGerm_fractCDE_Accumbens <- cor(x = fract_CDE_Accumbens$num_CAG_germ, y = fract_CDE_Accumbens$fract_CDE, method = "pearson", use="complete.obs")
 
-cor_numCAGGerm_fractCDE_Accumbens <- weighted.cor(x = fract_CDE_Accumbens$num_CAG_germ, y = fract_CDE_Accumbens$fract_CDE, weights = fract_CDE_Accumbens$num_SPN, method = "pearson", na.rm = TRUE)
-print(cor_numCAGGerm_fractCDE_Accumbens)
+cor_numCAGGerm_fractCDE_Paryani_Accumbens <- weighted.cor(x = fract_CDE_Paryani_Accumbens$num_CAG_germ, y = fract_CDE_Paryani_Accumbens$fract_CDE, weights = fract_CDE_Paryani_Accumbens$num_SPN, method = "pearson", na.rm = TRUE)
+print(cor_numCAGGerm_fractCDE_Paryani_Accumbens)
 
 #plot(x = fract_CDE_Accumbens$num_CAG_germ, y = fract_CDE_Accumbens$fract_CDE)
 
-ggplot(fract_CDE_Accumbens, aes(x=num_CAG_germ, y=100*fract_CDE)) + 
+ggplot(fract_CDE_Paryani_Accumbens, aes(x=num_CAG_germ, y=100*fract_CDE)) + 
   geom_point(col = "blue", aes(size = num_SPN))+
   geom_smooth(method=lm, se = TRUE, mapping = aes(weight = num_SPN)) +
   theme_classic() +
@@ -2505,6 +2570,11 @@ ggplot(fract_CDE_Accumbens, aes(x=num_CAG_germ, y=100*fract_CDE)) +
   #+ ggtitle(sprintf("Sp. corr = %.2f", cor_numCAGGerm_fractCDE_Accumbens))
   #+ xlim(c(36, 70)) + ylim(c(0, 1))
 ggsave("Paryani_NumCAGGermline_FractCDE_Accumbens.pdf", width = 8, height = 8)
+```
+
+
+```R
+fract_CDE_tmp_Accumbens
 ```
 
 
@@ -2636,6 +2706,7 @@ xlab("HD GRADE") +
 ylim(c(0, 100)) +
 ylab("Fraction cells in C-D-E phase (%)") 
 ggsave("Paryani_Accumbens_GRADE_vs_fraction_SPN_CDE.pdf", width = 6, height = 6)
+
 ```
 
 
@@ -2650,11 +2721,6 @@ ggsave("Paryani_Accumbens_GRADE_vs_fraction_SPN_CDE.pdf", width = 6, height = 6)
 # ggsave("Paryani_Accumbens_GRADE_vs_fraction_SPN_CDE_gt30.pdf", width = 6, height = 6)
 ```
 
-
-```R
-
-```
-
 # Plot_controls
 
 
@@ -2665,6 +2731,11 @@ Handsaker_fract_CDE_tmp_Caudate_CTRL$DATASET <- "Handsaker"
 Handsaker_fract_CDE_tmp_Caudate_CTRL$TISSUE = "Caudate"
 Handsaker_fract_CDE_tmp_Caudate_CTRL <- Handsaker_fract_CDE_tmp_Caudate_CTRL[, c("DATASET", "SAMPLE", "PRED_FRACT_CDE", "NUM_SPN", "TISSUE")]
 Handsaker_fract_CDE_tmp_Caudate_CTRL$Fract_SPN <- num_cells_Handsaker["S04577", "num_spns"]/num_cells_Handsaker["S04577", "num_cells"]
+```
+
+
+```R
+Handsaker_fract_CDE_tmp_Caudate_CTRL
 ```
 
 
@@ -2820,29 +2891,112 @@ ggsave("CTRL_all_datasets_nonCaudate_fraction_CDE.pdf", width = 8, height = 8)
 #"#7CAE00", "#00BFC4", "#C77CFF"
 ```
 
-# Human_fetal_LGE
-
 
 ```R
-LGE_fetal <- readRDS("/mnt/projects/labs/CLAB/PROJECT_ELongATE/mb_LGE2UCell.rds")
+val0 <- lapply(split(SPN_CTRL@meta.data$PREDICTED_PHASE, SPN_CTRL@meta.data$DONOR), function(x) {
+    tmp <- table(x)
+    if (length(tmp) == 1) {
+        out <- data.frame(FRACT_CDE=0, NUM_SPN=sum(tmp))
+    } else {
+        out <- data.frame(FRACT_CDE=tmp[2]/(tmp[2] + tmp[1]), NUM_SPN=sum(tmp))
+    }
+})
+val0
 
-head(LGE_fetal@meta.data)
-table(LGE_fetal@meta.data$celltype)
-table(LGE_fetal@meta.data$sample_name)
+val1 <- lapply(split(Paryani_CTRL_MSN_Caudate@meta.data$PROB_PHASE_CDE, Paryani_CTRL_MSN_Caudate@meta.data$Donor), function(x) {
+    tmp <- table(x > 0.5)
+     if (length(tmp) == 1) {
+        out <- data.frame(FRACT_CDE=0, NUM_SPN=sum(tmp))
+    } else {
+        out <- data.frame(FRACT_CDE=tmp[2]/(tmp[2] + tmp[1]), NUM_SPN=sum(tmp))
+    }
+})
+
+do.call(rbind, val1)
+sum(do.call(rbind, val1)[, 1]*do.call(rbind, val1)[, 2])/sum(do.call(rbind, val1)[, 2])
+          
+val2 <- lapply(split(Lee_CTRL_MSN_Caudate@meta.data$PROB_PHASE_CDE, Lee_CTRL_MSN_Caudate@meta.data$NBB_ID), function(x) {
+    tmp <- table(x > 0.5)
+     if (length(tmp) == 1) {
+        out <- data.frame(FRACT_CDE=0, NUM_SPN=sum(tmp))
+    } else {
+        out <- data.frame(FRACT_CDE=tmp[2]/(tmp[2] + tmp[1]), NUM_SPN=sum(tmp))
+    }
+})
+
+do.call(rbind, val2)
+sum(do.call(rbind, val2)[, 1]*do.call(rbind, val2)[, 2])/sum(do.call(rbind, val2)[, 2])
+
+allVal <- rbind(do.call(rbind, val0),
+      do.call(rbind, val1),
+      do.call(rbind, val2))
+sum(allVal[, 1]*allVal[, 2])/sum(allVal[, 2])
+
+1-sum(allVal[, 1]*allVal[, 2])/sum(allVal[, 2])
 ```
 
 
 ```R
+val3 <- lapply(split(Paryani_CTRL_MSN_Accumbens@meta.data$PROB_PHASE_CDE, Paryani_CTRL_MSN_Accumbens@meta.data$Donor), function(x) {
+    tmp <- table(x > 0.9)
+    #tmp <- table(x > 0.5)
+     if (length(tmp) == 1) {
+        out <- data.frame(FRACT_CDE=0, NUM_SPN=sum(tmp))
+    } else {
+        out <- data.frame(FRACT_CDE=tmp[2]/(tmp[2] + tmp[1]), NUM_SPN=sum(tmp))
+    }
+})
+
+do.call(rbind, val3)
+sum(do.call(rbind, val3)[, 1]*do.call(rbind, val3)[, 2])/sum(do.call(rbind, val3)[, 2])
+
+          
+val4 <- lapply(split(Lee_CTRL_MSN_Putamen@meta.data$PROB_PHASE_CDE, Lee_CTRL_MSN_Putamen@meta.data$NBB_ID), function(x) {
+    tmp <- table(x > 0.1)
+    #tmp <- table(x > 0.5)
+      if (length(tmp) == 1) {
+        out <- data.frame(FRACT_CDE=0, NUM_SPN=sum(tmp))
+    } else {
+        out <- data.frame(FRACT_CDE=tmp[2]/(tmp[2] + tmp[1]), NUM_SPN=sum(tmp))
+    }
+})
+
+do.call(rbind, val4)
+sum(do.call(rbind, val4)[, 1]*do.call(rbind, val4)[, 2])/sum(do.call(rbind, val4)[, 2])
+
+allVal <- rbind(do.call(rbind, val3),
+      do.call(rbind, val4))
+sum(allVal[, 1]*allVal[, 2])/sum(allVal[, 2])
+
+1-sum(allVal[, 1]*allVal[, 2])/sum(allVal[, 2])
+```
+
+
+```R
+length(unique(uni_Paryani_Caudate_Grade_CDE$SAMPLE))
+length(unique(uni_Lee_Caudate_Grade_CDE$SAMPLE))
+
+length(unique(uni_Paryani_Accumbens_Grade_CDE$SAMPLE))
+length(unique(uni_Lee_Putamen_Grade_CDE$SAMPLE))
+
+```
+
+# HUMAN FETAL LGE
+
+
+```R
+LGE_fetal <- readRDS("mb_LGE2UCell.rds")
+
+head(LGE_fetal@meta.data)
+table(LGE_fetal@meta.data$celltype)
+table(LGE_fetal@meta.data$sample_name)
 LGE_fetal_MSN <- subset(LGE_fetal, subset = celltype == "D1 MSNs PDYN+" | celltype == "D1 MSNs TSHZ1+" | celltype == "D2 MSNs PENK+" | celltype == "AP" | celltype == "BP")
 ```
 
 
 ```R
 LGE_fetal_MSN_CTRL <- subset(LGE_fetal_MSN, subset = sample_name != "HD_01")
-```
 
-
-```R
 LGE_fetal_MSN_CTRL <- SCTransform(LGE_fetal_MSN_CTRL)
 LGE_fetal_MSN_CTRL <- RunPCA(LGE_fetal_MSN_CTRL, features = VariableFeatures(object = LGE_fetal_MSN_CTRL), npcs = 50, reduction.name = "pca")
 ElbowPlot(LGE_fetal_MSN_CTRL, reduction = "pca", ndims = 50)
@@ -2850,8 +3004,6 @@ num_dims <- 40
 LGE_fetal_MSN_CTRL <- RunUMAP(LGE_fetal_MSN_CTRL, dims = 1:num_dims, reduction = "pca", reduction.name = "umap", reduction.key = "umap")
 DimPlot(LGE_fetal_MSN_CTRL, group.by = "celltype", reduction = "umap", pt.size = 1)
 ggsave("UMAP_LGE_fetal_CTRL_MSN_celltype.pdf", width = 8, height = 8)
-DimPlot(LGE_fetal_MSN_CTRL, group.by = "sample_name", reduction = "umap", pt.size = 1)
-ggsave("UMAP_LGE_fetal_CTRL_MSN_sample.pdf", width = 8, height = 8)
 ```
 
 
@@ -2895,10 +3047,6 @@ ggsave("UMAP_LGE_fetal_MSN_CTRL_PROBPREDPHASE.pdf", width = 8, height = 8)
 
 ```R
 LGE_fetal_MSN_HD <- subset(LGE_fetal_MSN, subset = sample_name == "HD_01")
-```
-
-
-```R
 LGE_fetal_MSN_HD <- SCTransform(LGE_fetal_MSN_HD)
 LGE_fetal_MSN_HD <- RunPCA(LGE_fetal_MSN_HD, features = VariableFeatures(object = LGE_fetal_MSN_HD), npcs = 50, reduction.name = "pca")
 ElbowPlot(LGE_fetal_MSN_HD, reduction = "pca", ndims = 50)
@@ -2947,4 +3095,338 @@ DimPlot(LGE_fetal_MSN_HD, group.by = "PREDICTED_PHASE", reduction = "umap", pt.s
 ggsave("UMAP_LGE_fetal_MSN_HD_PREDPHASE.pdf", width = 8, height = 8)
 FeaturePlot(LGE_fetal_MSN_HD, features = "PROB_PHASE_CDE", cols = c("blue", "red"), pt.size = 1, reduction = "umap")
 ggsave("UMAP_LGE_fetal_MSN_HD_PROBPREDPHASE.pdf", width = 8, height = 8)
+```
+
+# Mounted Figures
+
+
+```R
+par(mar = c(3, 5, 1, 2) + 0.1)
+options(repr.plot.width=22, repr.plot.height=15) 
+p1_A <- ggplot(SPN_HD@meta.data, aes(x = EXP_CAGLENGTH)) +
+geom_histogram(binwidth = 5, alpha = 0.5, position = "identity", fill = "#F8766D") +
+geom_vline(aes(xintercept = 150), colour="black", linetype = 2) +
+theme_classic() + 
+labs(tag = "(A)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+p1_B <- FeaturePlot(SPN_HD, reduction = "umap", features = "EXP_CAGLENGTH", cols = c("blue", "red"), pt.size = 1) + 
+labs(tag = "(B)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+p1_C <- DimPlot(SPN_HD, reduction = "umap", group.by = "PHASE", pt.size = 1) + 
+labs(tag = "(C)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+p1_D <- ggplot(HD_Handsaker_fract_CDE, aes(x = GRADE, y = FRACT_CDE, size = FRACT_SPN)) +
+geom_point(aes(size = FRACT_SPN), color = "#F8766D", alpha = 0.8, position = position_jitter(width = 0, height = 0)) +
+theme_classic() +
+xlab("HD Grade") +
+ylim(c(0, 25)) +
+ylab("Fraction cells in C-D-E phase (%)") + 
+labs(tag = "(D)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+p1_E <- ggplot(Handsaker_donor_metadata_HD, aes(x=CAP, y=100*FRACT_CDE, size = NUM_SPN)) + 
+  geom_point(color = "blue") +
+  geom_smooth(method=lm, se=TRUE, mapping = aes(weight = NUM_SPN)) +
+  theme_classic() +
+  xlab("CAP score") +
+  ylab("Fraction cells in C-D-E phase (%)") +
+labs(tag = "(E)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+p1_F <- ggplot(Handsaker_donor_metadata_HD, aes(x=GERM_CAGEXP, y=100*FRACT_CDE, size = NUM_SPN)) + 
+  geom_point(color = "blue") +
+  geom_smooth(method=lm, se=TRUE, mapping = aes(weight = NUM_SPN)) +
+  theme_classic() +
+   xlab("Num. CAG germline") +
+  ylab("Fraction cells in C-D-E phase (%)") + 
+labs(tag = "(F)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+p1 <- (p1_A | p1_B | p1_C) / (p1_D | p1_E | p1_F)
+p1
+ggsave("Figure_1.pdf", width = 22, height = 15)
+```
+
+
+```R
+par(mar = c(3, 5, 1, 2) + 0.1)
+options(repr.plot.width=22, repr.plot.height=15) 
+p2_A <- DimPlot(SPN_HD, reduction = "umap", group.by = "PREDICTED_PHASE", pt.size = 1) + 
+labs(tag = "(A)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+p2_B <- ggplot(Handsaker_donor_metadata_full, aes(x=100*FRACT_CDE_TEST, y=100*PRED_FRACT_CDE_TEST, size = NUM_SPN_TEST)) + 
+  geom_point(color = "blue") +
+  geom_smooth(method=lm, se=TRUE, mapping = aes(weight = NUM_SPN_TEST)) +
+  theme_classic() +
+  xlab("Fraction cells in C-D-E phase (%)") +
+  ylab("Predicted fraction cells in C-D-E phase (%)") + 
+labs(tag = "(B)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+p2_C <- ggplot(df_allPhaseCgenes_sorted, aes(x = index, y = avg_expr_PhaseC, color = PHASE)) +
+geom_point(aes(x = index, y = avg_expr_PhaseC, color = PHASE), size = 1) +
+theme_classic() +
+geom_vline(aes(xintercept = ind_150_all), colour="black", linetype = 2) +
+xlab("SPNs sorted by CAG length") +
+ylab("Average expression Phase C genes") +
+labs(tag = "(C)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+ind_150 <- df_sorted[which(df_sorted$CAGLENGTH_SPN_sized > 150), "index"][1]
+p2_D <- ggplot(df_sorted, aes(x = index)) +
+geom_point(aes(y = score, color = PRED_PHASE, alpha = PROB_PHASE_CDE), size = 1) +
+geom_point(aes(y = CAGLENGTH_SPN_sized), size = 0.1) +
+theme_classic() +
+geom_vline(aes(xintercept = ind_150), colour="black", linetype = 2) +
+xlab("SPNs sorted by CAG length") +
+ylab("Number of CAG repeats") + 
+labs(tag = "(D)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+ind_noNA <- which(apply(results_test_phaseC_exp, 1, function(x) !any(is.na(x))))
+Data_filt <- results_test_phaseC_exp[ind_noNA, ]
+df <- data.frame(CAG = c(Data_filt[, "CAG_measured"], Data_filt[, "CAG_predicted"]), method = c(rep("Measured", dim(Data_filt)[1]), rep("Predicted", dim(Data_filt)[1])))
+p2_E <- ggplot(df, aes(x= CAG, fill = method, color = method)) +
+  geom_density(alpha = 0.5, adjust = 1) +
+  #geom_histogram(binwidth = 5, alpha = 0.5, position = "identity") +
+  scale_color_manual(values = c("purple", "green")) +
+  scale_fill_manual(values = c("purple", "green")) +
+  xlab("Num. CAG") + ylab("Num. SPNs") +
+  theme_classic() + 
+labs(tag = "(E)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+quant_thr <- 0.999
+p2_F <- as.ggplot(~ {
+                par(mar = c(3, 5, 1, 2) + 0.1)
+                smoothScatter(results_test_phaseC_measured[, "CAG_measured"], results_test_phaseC_measured[, "CAG_predicted"], xlab = "CAG_measured", ylab = "CAG_predicted", cex.main = 0.6, cex.axis = 0.8,
+                xlim = c(0, quantile(c(results_test_phaseC_measured[, "CAG_measured"], results_test_phaseC_measured[, "CAG_predicted"]), quant_thr, na.rm = TRUE)), 
+                ylim = c(0, quantile(c(results_test_phaseC_measured[, "CAG_measured"], results_test_phaseC_measured[, "CAG_predicted"]), quant_thr, na.rm = TRUE)))}) +
+geom_abline(intercept = 0, slope = 1, color = "green") + 
+labs(tag = "(F)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+#abline(0, 1, col = "green") 
+#p2_D | p2_E | p2_F
+                        
+p2 <- (p2_A | p2_B | p2_C) / (p2_D | p2_E | p2_F)
+p2
+ggsave("Figure_2.pdf", width = 22, height = 15)
+```
+
+
+```R
+par(mar = c(3, 5, 1, 2) + 0.1)
+options(repr.plot.width=22, repr.plot.height=15) 
+p3_A <- DimPlot(Paryani_HD_MSN_Caudate, group.by = "PREDICTED_PHASE", reduction = "harmony", pt.size = 1) + 
+labs(tag = "(A)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+p3_B <- ggplot(uni_Paryani_Caudate_Grade_CDE, aes(x = GRADE, y = Fract_CDE, color = CELL_TYPE)) +
+geom_point(aes(size = Fract_SPN), alpha = 0.8, position = position_jitter(width = 0.1, height = 0)) +
+scale_color_manual(values =c("#F8766D", "#7CAE00", "#00BFC4", "#C77CFF")) +
+theme_classic() +
+xlab("HD GRADE") +
+#ylim(c(0, 100)) +
+ylab("Fraction cells in C-D-E phase (%)") + 
+labs(tag = "(B)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+p3_C <- ggplot(fract_CDE_Paryani_Caudate, aes(x=num_CAG_germ, y=100*fract_CDE)) + 
+  geom_point(col = "blue", aes(size = num_SPN))+
+  geom_smooth(method=lm, se = TRUE, mapping = aes(weight = num_SPN)) +
+  theme_classic() +
+  xlab("Num. CAG germline") +
+  ylab("Fraction cells in C-D-E phase (%)") +
+labs(tag = "(C)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+p3_D <- DimPlot(Lee_HD_MSN_Caudate, group.by = "PREDICTED_PHASE", reduction = "harmony", pt.size = 1) +
+labs(tag = "(D)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+p3_E <- ggplot(uni_Lee_Caudate_Grade_CDE, aes(x = GRADE, y = Fract_CDE, color = CELL_TYPE)) +
+geom_point(aes(size = Fract_SPN), alpha = 0.8, position = position_jitter(width = 0.1, height = 0)) +
+scale_color_manual(values = c("#F8766D", "#619CFF")) +
+theme_classic() +
+xlab("HD GRADE") +
+ylim(c(0, 100)) +
+ylab("Fraction cells in C-D-E phase (%)")  + 
+labs(tag = "(E)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+p3_F <- ggplot(CTRL_all_datasets[which(CTRL_all_datasets$TISSUE == "Caudate"), ], aes(x = TISSUE, color = DATASET, y = 100*PRED_FRACT_CDE, size = Fract_SPN)) +
+geom_point(aes(size = Fract_SPN), alpha = 0.8, position = position_jitter(width = 0.5, height = 0)) +
+#scale_color_manual(values =c("#F8766D")) +
+theme_classic() +
+xlab("Tissue") +
+ylim(c(0, 100)) +
+ylab("Non-HD donors - Fraction cells in C-D-E phase (%)") + 
+labs(tag = "(F)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+                        
+p3 <- (p3_A | p3_B | p3_C) / (p3_D | p3_E | p3_F)
+p3
+ggsave("Figure_3.pdf", width = 22, height = 15)
+```
+
+
+```R
+par(mar = c(3, 5, 1, 2) + 0.1)
+options(repr.plot.width=22, repr.plot.height=15) 
+p4_A <- DimPlot(Paryani_HD_MSN_Accumbens, group.by = "PREDICTED_PHASE", reduction = "harmony", pt.size = 1) + 
+labs(tag = "(A)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+p4_B <- ggplot(uni_Paryani_Accumbens_Grade_CDE, aes(x = GRADE, y = Fract_CDE, color = CELL_TYPE)) +
+geom_point(aes(size = Fract_SPN), alpha = 0.8, position = position_jitter(width = 0.1, height = 0)) +
+scale_color_manual(values =c("#F8766D", "#7CAE00", "#00BFC4", "#C77CFF")) +
+theme_classic() +
+xlab("HD GRADE") +
+#ylim(c(0, 100)) +
+ylab("Fraction cells in C-D-E phase (%)") + 
+labs(tag = "(B)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+p4_C <- ggplot(fract_CDE_Paryani_Accumbens, aes(x=num_CAG_germ, y=100*fract_CDE)) + 
+  geom_point(col = "blue", aes(size = num_SPN))+
+  geom_smooth(method=lm, se = TRUE, mapping = aes(weight = num_SPN)) +
+  theme_classic() +
+  xlab("Num. CAG germline") +
+  ylab("Fraction cells in C-D-E phase (%)") +
+labs(tag = "(C)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+p4_D <- DimPlot(Lee_HD_MSN_Putamen, group.by = "PREDICTED_PHASE", reduction = "harmony", pt.size = 1) +
+labs(tag = "(D)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+p4_E <- ggplot(uni_Lee_Putamen_Grade_CDE, aes(x = GRADE, y = Fract_CDE, color = CELL_TYPE)) +
+geom_point(aes(size = Fract_SPN), alpha = 0.8, position = position_jitter(width = 0.1, height = 0)) +
+scale_color_manual(values = c("#F8766D", "#619CFF")) +
+theme_classic() +
+xlab("HD GRADE") +
+ylim(c(0, 100)) +
+ylab("Fraction cells in C-D-E phase (%)")  + 
+labs(tag = "(E)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+p4_F <- ggplot(CTRL_all_datasets[which(CTRL_all_datasets$TISSUE != "Caudate"), ], aes(x = TISSUE, color = DATASET, y = 100*PRED_FRACT_CDE, size = Fract_SPN)) +
+geom_point(aes(size = Fract_SPN), alpha = 0.8, position = position_jitter(width = 0.5, height = 0)) +
+#scale_color_manual(values =c("#F8766D")) +
+theme_classic() +
+xlab("Tissue") +
+ylim(c(0, 100)) +
+ylab("Non-HD donors - Fraction cells in C-D-E phase (%)") + 
+labs(tag = "(F)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+                        
+p4 <- (p4_A | p4_B | p4_C) / (p4_D | p4_E | p4_F)
+p4
+ggsave("Figure_4.pdf", width = 22, height = 15)
+```
+
+
+```R
+par(mar = c(3, 5, 1, 2) + 0.1)
+options(repr.plot.width=22, repr.plot.height=15) 
+p5_A <- DimPlot(LGE_fetal_MSN_CTRL, group.by = "celltype", reduction = "umap", pt.size = 1) + 
+labs(tag = "(A)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+p5_B <- DimPlot(LGE_fetal_MSN_CTRL, group.by = "PREDICTED_PHASE", reduction = "umap", pt.size = 1) + 
+labs(tag = "(B)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+p5_C <- DimPlot(LGE_fetal_MSN_HD, group.by = "celltype", reduction = "umap", pt.size = 1) +
+labs(tag = "(C)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+p5_D <- DimPlot(LGE_fetal_MSN_HD, group.by = "PREDICTED_PHASE", reduction = "umap", pt.size = 1) +
+labs(tag = "(D)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+
+p5 <- (p5_A | p5_B) / (p5_C | p5_D)
+p5
+ggsave("Figure_5.pdf", width = 22, height = 15)
+```
+
+
+```R
+par(mar = c(3, 5, 1, 2) + 0.1)
+options(repr.plot.width=22, repr.plot.height=15) 
+pS1_A <- DimPlot(SPN_all, group.by = "SAMPLE", reduction = "umap", pt.size = 1) + labs(tag = "(A)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+pS1_B <- FeaturePlot(SPN_all, reduction = "umap", features = "nFeature_RNA", cols = c("blue", "red"), pt.size = 1) + labs(tag = "(B)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+pS1_C <- FeaturePlot(SPN_all, reduction = "umap", features = "nCount_RNA", cols = c("blue", "red"), pt.size = 1) + labs(tag = "(C)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+pS1_D <- FeaturePlot(SPN_all, reduction = "umap", features = "percent.mt", cols = c("blue", "red"), pt.size = 1) + labs(tag = "(D)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+pS1_E <- FeaturePlot(SPN_all, reduction = "umap", features = "EXP_CAGLENGTH", cols = c("blue", "red"), pt.size = 1) + labs(tag = "(E)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+pS1_F <- DimPlot(SPN_all, reduction = "umap", group.by = "seurat_clusters", pt.size = 1) + labs(tag = "(F)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+pS1 <- (pS1_A | pS1_B | pS1_C) / (pS1_D | pS1_E | pS1_F)
+pS1
+ggsave("Figure_S1.pdf", width = 22, height = 15)
+```
+
+
+```R
+par(mar = c(3, 5, 1, 2) + 0.1)
+options(repr.plot.width=22, repr.plot.height=15) 
+pS3_A <- DimPlot(Paryani_HD_MSN_Caudate, group.by = "Batch", reduction = "harmony", pt.size = 1) + labs(tag = "(A)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 2))
+
+pS3_B <- DimPlot(Paryani_HD_MSN_Caudate, group.by = "sub_type_4", reduction = "harmony", pt.size = 1) + 
+labs(tag = "(B)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+Paryani_HD_MSN_Caudate@meta.data$Grade <- factor(Paryani_HD_MSN_Caudate@meta.data$Grade, levels = c("HDJ", "HD4", "HD3", "HD2", "HD1", "Control"))
+pS3_C <- DimPlot(Paryani_HD_MSN_Caudate, group.by = "Grade", reduction = "harmony", pt.size = 1) +
+labs(tag = "(C)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+pS3_D <- DimPlot(Lee_HD_MSN_Caudate, group.by = "Batch", reduction = "harmony", pt.size = 1) +
+labs(tag = "(D)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+pS3_E <- DimPlot(Lee_HD_MSN_Caudate, group.by = "CellType", reduction = "harmony", pt.size = 1) + 
+labs(tag = "(E)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+pS3_F <- DimPlot(Lee_HD_MSN_Caudate, group.by = "Grade", reduction = "harmony", pt.size = 1) + 
+labs(tag = "(F)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+                        
+pS3 <- (pS3_A | pS3_B | pS3_C) / (pS3_D | pS3_E | pS3_F)
+pS3
+ggsave("Figure_S3.pdf", width = 22, height = 15)
+```
+
+
+```R
+par(mar = c(3, 5, 1, 2) + 0.1)
+options(repr.plot.width=22, repr.plot.height=15) 
+pS4_A <- DimPlot(Paryani_HD_MSN_Accumbens, group.by = "Batch", reduction = "harmony", pt.size = 1) + 
+labs(tag = "(A)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+pS4_B <- DimPlot(Paryani_HD_MSN_Accumbens, group.by = "sub_type_4", reduction = "harmony", pt.size = 1) + 
+labs(tag = "(B)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+Paryani_HD_MSN_Accumbens@meta.data$Grade <- factor(Paryani_HD_MSN_Accumbens@meta.data$Grade, levels = c("HDJ", "HD4", "HD3", "HD2", "HD1", "Control"))
+pS4_C <- DimPlot(Paryani_HD_MSN_Accumbens, group.by = "Grade", reduction = "harmony", pt.size = 1) +
+labs(tag = "(C)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+pS4_D <- DimPlot(Lee_HD_MSN_Putamen, group.by = "Batch", reduction = "harmony", pt.size = 1) +
+labs(tag = "(D)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+pS4_E <- DimPlot(Lee_HD_MSN_Putamen, group.by = "CellType", reduction = "harmony", pt.size = 1) + 
+labs(tag = "(E)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+pS4_F <- DimPlot(Lee_HD_MSN_Putamen, group.by = "Grade", reduction = "harmony", pt.size = 1) + 
+labs(tag = "(F)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+                        
+pS4 <- (pS4_A | pS4_B | pS4_C) / (pS4_D | pS4_E | pS4_F)
+pS4
+ggsave("Figure_S4.pdf", width = 22, height = 15)
+```
+
+
+```R
+par(mar = c(3, 5, 1, 2) + 0.1)
+options(repr.plot.width=22, repr.plot.height=15) 
+pS5_A <- DimPlot(SPN_CTRL, reduction = "umap", group.by = "PREDICTED_PHASE", pt.size = 1) + 
+labs(tag = "(A)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+pS5_B <- DimPlot(Paryani_CTRL_MSN_Caudate, group.by = "PREDICTED_PHASE", reduction = "harmony", pt.size = 1) + 
+labs(tag = "(B)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+pS5_C <- DimPlot(Lee_CTRL_MSN_Caudate, group.by = "PREDICTED_PHASE", reduction = "harmony", pt.size = 1) +
+labs(tag = "(C)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+pS5_D <- DimPlot(Paryani_CTRL_MSN_Accumbens, group.by = "PREDICTED_PHASE", reduction = "harmony", pt.size = 1) +
+labs(tag = "(D)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+pS5_E <- DimPlot(Lee_CTRL_MSN_Putamen, group.by = "PREDICTED_PHASE", reduction = "harmony", pt.size = 1) + 
+labs(tag = "(E)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+
+pS5_F <- ggplot(CTRL_all_datasets, aes(x = TISSUE, color = DATASET, y = 100*PRED_FRACT_CDE, size = Fract_SPN)) +
+geom_point(aes(size = Fract_SPN), alpha = 0.8, position = position_jitter(width = 0.3, height = 0)) +
+#scale_color_manual(values =c("#F8766D")) +
+theme_classic() +
+xlab("Tissue") +
+ylim(c(0, 100)) +
+ylab("Non-HD donors - Fraction cells in C-D-E phase (%)") + 
+labs(tag = "(F)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+                        
+pS5 <- (pS5_A | pS5_B | pS5_C) / (pS5_D | pS5_E | pS5_F)
+pS5
+ggsave("Figure_S5.pdf", width = 22, height = 15)
 ```
