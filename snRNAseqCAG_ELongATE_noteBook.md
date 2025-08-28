@@ -35,6 +35,8 @@
 [Plot predictions on controls](#Plot_controls)
     
 [Run model on human_fetal_LGE](#Human_fetal_LGE)
+    
+[All datasets](#All_datasets)
 
 # Load_packages
 
@@ -2981,7 +2983,7 @@ length(unique(uni_Lee_Putamen_Grade_CDE$SAMPLE))
 
 ```
 
-# HUMAN FETAL LGE
+# Human_fetal_LGE
 
 
 ```R
@@ -3095,6 +3097,99 @@ DimPlot(LGE_fetal_MSN_HD, group.by = "PREDICTED_PHASE", reduction = "umap", pt.s
 ggsave("UMAP_LGE_fetal_MSN_HD_PREDPHASE.pdf", width = 8, height = 8)
 FeaturePlot(LGE_fetal_MSN_HD, features = "PROB_PHASE_CDE", cols = c("blue", "red"), pt.size = 1, reduction = "umap")
 ggsave("UMAP_LGE_fetal_MSN_HD_PROBPREDPHASE.pdf", width = 8, height = 8)
+```
+
+# All_datasets
+
+
+```R
+SPN_HD_noSCT <- SPN_HD
+SPN_HD_noSCT[["SCT"]] <- NULL
+```
+
+
+```R
+objs <- list(SPN_HD_noSCT, 
+             Paryani_HD_MSN_Caudate, 
+             Paryani_HD_MSN_Accumbens, 
+             Lee_HD_MSN_Caudate, 
+             Lee_HD_MSN_Putamen)
+
+# Rimuovo eventuali SCT
+objs <- lapply(objs, function(x) {
+  if ("SCT" %in% names(x@assays)) {
+    x[["SCT"]] <- NULL
+  }
+  DefaultAssay(x) <- "RNA"
+  return(x)
+})
+
+ALL_DATASETS <- merge(x = objs[[1]], y = objs[-1], add.cell.ids = c("HandsakerCaudate", "ParyaniCaudate", "ParyaniAccumbens", "LeeCaudate", "LeePutamen"))
+```
+
+
+```R
+ALL_DATASETS
+```
+
+
+```R
+ALL_DATASETS@meta.data$Dataset <- factor(gsub(x = rownames(ALL_DATASETS@meta.data), pattern = "_.*", replacement = ""))
+```
+
+
+```R
+ALL_DATASETS@meta.data
+```
+
+
+```R
+#Run SCTransform
+ALL_DATASETS <- SCTransform(ALL_DATASETS, vars.to.regress = c("nCount_RNA", "nFeature_RNA"))
+cat(sprintf("Num. features = %d; Num. SPN = %d\n", dim(ALL_DATASETS)[1], dim(ALL_DATASETS)[2]))
+```
+
+
+```R
+#Run PCA and UMAP for HD donors
+ALL_DATASETS <- RunPCA(ALL_DATASETS, features = VariableFeatures(object = ALL_DATASETS), npcs = 50, reduction.name = "pca")
+ElbowPlot(ALL_DATASETS, reduction = "pca", ndims = 50)
+num_dims <- 40
+ALL_DATASETS <- RunUMAP(ALL_DATASETS, dims = 1:num_dims, reduction = "pca", reduction.name = "umap", reduction.key = "umap")
+DimPlot(ALL_DATASETS, group.by = "Dataset", reduction = "umap", pt.size = 1)
+
+ALL_DATASETS <- RunHarmony(object = ALL_DATASETS, reduction.use = "pca", group.by.vars = "Dataset", 
+                           reduction.save = "harmonyPca", assay = "SCT", verbose = FALSE, normalization.method = "SCT")
+ALL_DATASETS <- RunUMAP(ALL_DATASETS, dims = 1:num_dims, reduction = "harmonyPca", reduction.name = "harmony")
+p1 <- DimPlot(ALL_DATASETS, group.by = "Dataset", reduction = "harmony", pt.size = 1)
+plot(p1)
+```
+
+
+```R
+DimPlot(ALL_DATASETS, group.by = "PHASE", reduction = "harmony", pt.size = 1)
+```
+
+
+```R
+p2 <- DimPlot(ALL_DATASETS, group.by = "PREDICTED_PHASE", reduction = "harmony", pt.size = 1)
+plot(p2)
+```
+
+
+```R
+par(mar = c(3, 5, 1, 2) + 0.1)
+options(repr.plot.width=15, repr.plot.height=10)
+p1 <- p1 + labs(tag = "(A)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+p2 <- p2 + labs(tag = "(B)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
+                        
+p_12 <- p1 | p2
+p_12
+```
+
+
+```R
+DimPlot(ALL_DATASETS, group.by = "CellType", reduction = "harmony", pt.size = 1)
 ```
 
 # Mounted Figures
