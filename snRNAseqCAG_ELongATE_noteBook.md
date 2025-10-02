@@ -1,7 +1,5 @@
 # Single-nuclei RNA-seq and matched CAG sizing - ELongATE
 
-
-```R
 # Index
 
 [Load packages](#Load_packages)
@@ -43,7 +41,6 @@
 [Identify SPNs in Xu dataset](#Identify_SPNs_in_Xu_dataset)
 
 [Run model on Xu dataset](#Run_model_on_Xu_dataset)
-```
 
 # Load_packages
 
