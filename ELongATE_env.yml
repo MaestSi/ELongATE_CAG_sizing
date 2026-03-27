@@ -402,4 +402,4 @@ dependencies:
       - igraph==0.10.8
       - leidenalg==0.10.1
       - texttable==1.6.7
-prefix: /mnt/home/maestri/miniconda3/envs/Monocle3_env
+prefix: /mnt/home/maestri/miniconda3/envs/ELongATE_env
