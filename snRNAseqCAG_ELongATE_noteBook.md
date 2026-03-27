@@ -65,14 +65,14 @@ library("weights")
 library("patchwork")
 library("ggplotify")
 library("PRROC")
-setwd("/mnt/projects/labs/CLAB/PROJECT_ELongATE/results_rebuttal/")
+setwd("PROJECT_ELongATE")
 ```
 
 # Read_Handsaker_metadata
 
 
 ```R
-pb_metadata_file <- "/mnt/projects/labs/CLAB/PROJECT_ELongATE/Handsaker/Analysis_bag_6_Broad_Huntingtons_Caudate_2024_PacBio_Metadata_Open/pacbio_deepdives_cells_unfiltered.txt"
+pb_metadata_file <- "Handsaker/Analysis_bag_6_Broad_Huntingtons_Caudate_2024_PacBio_Metadata_Open/pacbio_deepdives_cells_unfiltered.txt"
 pb_metadata <- read.table(pb_metadata_file, sep = "\t", header = TRUE)
 sample_name <- gsub(pattern = '(.*)_\\w+', replacement = '\\1', pb_metadata$CELL_BARCODE)
 CB <- gsub(pattern = '.*_(\\w+)', replacement = '\\1', pb_metadata$CELL_BARCODE)
@@ -92,7 +92,6 @@ tmp <- lapply(split(pb_metadata, pb_metadata$DONOR), function(x) {
 })
 
 num_cells_Handsaker <- do.call(rbind, tmp)
-#num_cells_Handsaker
 ```
 
 
@@ -104,7 +103,7 @@ num_cells_Handsaker
 
 
 ```R
-h5_files <- list.files(path = "/mnt/projects/labs/CLAB/PROJECT_ELongATE/Handsaker/", pattern = "\\.h5$", full.names = TRUE)
+h5_files <- list.files(path = "Handsaker", pattern = "\\.h5$", full.names = TRUE)
 names(h5_files) <- gsub(x = basename(h5_files), pattern = "\\.umi.*", replacement = "")
 ```
 
@@ -118,8 +117,6 @@ Read_h5_file = function(h5_file, metadata) {
     #create a seurat object
     seuratObject <- CreateSeuratObject(counts(sce), project = names(h5_file), min.cells = 0, min.features = 0)
     seuratObject[["CB"]] <- rownames(seuratObject@meta.data)
-    #print(head(rownames(metadata)))
-    #print(head(seuratObject@meta.data))
     #create tmp variable and edit rownames
     tmp <- seuratObject@meta.data
     rownames(tmp) <- gsub(x = gsub(x = paste0(seuratObject@meta.data$orig.ident, "_",
@@ -128,13 +125,10 @@ Read_h5_file = function(h5_file, metadata) {
                           pattern = "_merged_", replacement = "_")
     #exploit edited rownames to add metadata to Seurat object
     tmp <- cbind(tmp, metadata[rownames(tmp), ])
-    #print(head(rownames(tmp)))
     #replace row names with old ones
     rownames(tmp) <- rownames(seuratObject@meta.data)
     #update original object
     seuratObject@meta.data <- tmp
-    #print(head(seuratObject@meta.data))
-    #print(head(rownames(seuratObject@meta.data)))
     #retain only SPN
     seuratObject <- subset(x = seuratObject, subset = CELLTYPE == "SPN")
     #run SCTransform on SPN only
@@ -151,223 +145,209 @@ names(h5_files)
 
 
 ```R
-# S02205_HD_Caudate_DeepDive_rxn1 <- Read_h5_file(h5_files["S02205_HD_Caudate_DeepDive_rxn1"], pb_metadata)
-# S02205_HD_Caudate_DeepDive_rxn2 <- Read_h5_file(h5_files["S02205_HD_Caudate_DeepDive_rxn2"], pb_metadata)
-# S02205_HD_Caudate_DeepDive_rxn3 <- Read_h5_file(h5_files["S02205_HD_Caudate_DeepDive_rxn3"], pb_metadata)
-# S02205_HD_Caudate_DeepDive_rxn4 <- Read_h5_file(h5_files["S02205_HD_Caudate_DeepDive_rxn4"], pb_metadata)
+S02205_HD_Caudate_DeepDive_rxn1 <- Read_h5_file(h5_files["S02205_HD_Caudate_DeepDive_rxn1"], pb_metadata)
+S02205_HD_Caudate_DeepDive_rxn2 <- Read_h5_file(h5_files["S02205_HD_Caudate_DeepDive_rxn2"], pb_metadata)
+S02205_HD_Caudate_DeepDive_rxn3 <- Read_h5_file(h5_files["S02205_HD_Caudate_DeepDive_rxn3"], pb_metadata)
+S02205_HD_Caudate_DeepDive_rxn4 <- Read_h5_file(h5_files["S02205_HD_Caudate_DeepDive_rxn4"], pb_metadata)
 
-# S02205 <- merge(x = S02205_HD_Caudate_DeepDive_rxn1, 
-#                 y = c(S02205_HD_Caudate_DeepDive_rxn2, 
-#                       S02205_HD_Caudate_DeepDive_rxn3,
-#                       S02205_HD_Caudate_DeepDive_rxn4))
+S02205 <- merge(x = S02205_HD_Caudate_DeepDive_rxn1, 
+                y = c(S02205_HD_Caudate_DeepDive_rxn2, 
+                      S02205_HD_Caudate_DeepDive_rxn3,
+                      S02205_HD_Caudate_DeepDive_rxn4))
 
-# saveRDS(object = S02205, file = "S02205.rds")
+saveRDS(object = S02205, file = "S02205.rds")
 ```
 
 
 ```R
-# S04002_10X_rxn1 <- Read_h5_file(h5_files["S04002_10X_rxn1"], pb_metadata)
-# S04002_10X_rxn2_merged <- Read_h5_file(h5_files["S04002_10X_rxn2_merged"], pb_metadata)
-# S04002_10X_rxn3_merged <- Read_h5_file(h5_files["S04002_10X_rxn3_merged"], pb_metadata)
-# S04002_10X_rxn4_merged <- Read_h5_file(h5_files["S04002_10X_rxn4_merged"], pb_metadata)
-# S04002_rxn5 <- Read_h5_file(h5_files["S04002_rxn5"], pb_metadata)
-# S04002_rxn6 <- Read_h5_file(h5_files["S04002_rxn6"], pb_metadata)
-# S04002_rxn7 <- Read_h5_file(h5_files["S04002_rxn7"], pb_metadata)
-# S04002_rxn8 <- Read_h5_file(h5_files["S04002_rxn8"], pb_metadata)
+S04002_10X_rxn1 <- Read_h5_file(h5_files["S04002_10X_rxn1"], pb_metadata)
+S04002_10X_rxn2_merged <- Read_h5_file(h5_files["S04002_10X_rxn2_merged"], pb_metadata)
+S04002_10X_rxn3_merged <- Read_h5_file(h5_files["S04002_10X_rxn3_merged"], pb_metadata)
+S04002_10X_rxn4_merged <- Read_h5_file(h5_files["S04002_10X_rxn4_merged"], pb_metadata)
+S04002_rxn5 <- Read_h5_file(h5_files["S04002_rxn5"], pb_metadata)
+S04002_rxn6 <- Read_h5_file(h5_files["S04002_rxn6"], pb_metadata)
+S04002_rxn7 <- Read_h5_file(h5_files["S04002_rxn7"], pb_metadata)
+S04002_rxn8 <- Read_h5_file(h5_files["S04002_rxn8"], pb_metadata)
 
-# S04002 <- merge(x = S04002_10X_rxn1,
-#                 y = c(S04002_10X_rxn2_merged,
-#                      S04002_10X_rxn3_merged,
-#                      S04002_10X_rxn4_merged,
-#                      S04002_rxn5,
-#                      S04002_rxn6,
-#                      S04002_rxn7,
-#                      S04002_rxn8))
+S04002 <- merge(x = S04002_10X_rxn1,
+                y = c(S04002_10X_rxn2_merged,
+                     S04002_10X_rxn3_merged,
+                     S04002_10X_rxn4_merged,
+                     S04002_rxn5,
+                     S04002_rxn6,
+                     S04002_rxn7,
+                     S04002_rxn8))
 
-# saveRDS(object = S04002, file = "S04002.rds")
+saveRDS(object = S04002, file = "S04002.rds")
 ```
 
 
 ```R
-# S04577_HD_Caudate_DeepDive_rxn1 <- Read_h5_file(h5_files["S04577_HD_Caudate_DeepDive_rxn1"], pb_metadata)
-# S04577_HD_Caudate_DeepDive_rxn2 <- Read_h5_file(h5_files["S04577_HD_Caudate_DeepDive_rxn2"], pb_metadata)
-# S04577_HD_Caudate_DeepDive_rxn3 <- Read_h5_file(h5_files["S04577_HD_Caudate_DeepDive_rxn3"], pb_metadata)
-# S04577_HD_Caudate_DeepDive_rxn4 <- Read_h5_file(h5_files["S04577_HD_Caudate_DeepDive_rxn4"], pb_metadata)
+S04577_HD_Caudate_DeepDive_rxn1 <- Read_h5_file(h5_files["S04577_HD_Caudate_DeepDive_rxn1"], pb_metadata)
+S04577_HD_Caudate_DeepDive_rxn2 <- Read_h5_file(h5_files["S04577_HD_Caudate_DeepDive_rxn2"], pb_metadata)
+S04577_HD_Caudate_DeepDive_rxn3 <- Read_h5_file(h5_files["S04577_HD_Caudate_DeepDive_rxn3"], pb_metadata)
+S04577_HD_Caudate_DeepDive_rxn4 <- Read_h5_file(h5_files["S04577_HD_Caudate_DeepDive_rxn4"], pb_metadata)
 
-# S04577 <- merge(x = S04577_HD_Caudate_DeepDive_rxn1,
-#                 y = c(S04577_HD_Caudate_DeepDive_rxn2,
-#                      S04577_HD_Caudate_DeepDive_rxn3,
-#                      S04577_HD_Caudate_DeepDive_rxn4))
+S04577 <- merge(x = S04577_HD_Caudate_DeepDive_rxn1,
+                y = c(S04577_HD_Caudate_DeepDive_rxn2,
+                     S04577_HD_Caudate_DeepDive_rxn3,
+                     S04577_HD_Caudate_DeepDive_rxn4))
 
-# saveRDS(object = S04577, file = "S04577.rds")
+saveRDS(object = S04577, file = "S04577.rds")
 ```
 
 
 ```R
-# S05202_HD_Caudate_DeepDive_rxn1 <- Read_h5_file(h5_files["S05202_HD_Caudate_DeepDive_rxn1"], pb_metadata)
-# S05202_HD_Caudate_DeepDive_rxn2 <- Read_h5_file(h5_files["S05202_HD_Caudate_DeepDive_rxn2"], pb_metadata)
-# S05202_HD_Caudate_DeepDive_rxn3 <- Read_h5_file(h5_files["S05202_HD_Caudate_DeepDive_rxn3"], pb_metadata)
+S05202_HD_Caudate_DeepDive_rxn1 <- Read_h5_file(h5_files["S05202_HD_Caudate_DeepDive_rxn1"], pb_metadata)
+S05202_HD_Caudate_DeepDive_rxn2 <- Read_h5_file(h5_files["S05202_HD_Caudate_DeepDive_rxn2"], pb_metadata)
+S05202_HD_Caudate_DeepDive_rxn3 <- Read_h5_file(h5_files["S05202_HD_Caudate_DeepDive_rxn3"], pb_metadata)
 
-# S05202 <- merge(x = S05202_HD_Caudate_DeepDive_rxn1,
-#                 y = c(S05202_HD_Caudate_DeepDive_rxn2,
-#                      S05202_HD_Caudate_DeepDive_rxn3))
+S05202 <- merge(x = S05202_HD_Caudate_DeepDive_rxn1,
+                y = c(S05202_HD_Caudate_DeepDive_rxn2,
+                     S05202_HD_Caudate_DeepDive_rxn3))
 
-# saveRDS(object = S05202, file = "S05202.rds")
+saveRDS(object = S05202, file = "S05202.rds")
 ```
 
 
 ```R
-# S05368_HD_Caudate_DeepDive_rxn1 <- Read_h5_file(h5_files["S05368_HD_Caudate_DeepDive_rxn1"], pb_metadata)
-# S05368_HD_Caudate_DeepDive_rxn2 <- Read_h5_file(h5_files["S05368_HD_Caudate_DeepDive_rxn2"], pb_metadata)
-# S05368_HD_Caudate_DeepDive_rxn3 <- Read_h5_file(h5_files["S05368_HD_Caudate_DeepDive_rxn3"], pb_metadata)
+S05368_HD_Caudate_DeepDive_rxn1 <- Read_h5_file(h5_files["S05368_HD_Caudate_DeepDive_rxn1"], pb_metadata)
+S05368_HD_Caudate_DeepDive_rxn2 <- Read_h5_file(h5_files["S05368_HD_Caudate_DeepDive_rxn2"], pb_metadata)
+S05368_HD_Caudate_DeepDive_rxn3 <- Read_h5_file(h5_files["S05368_HD_Caudate_DeepDive_rxn3"], pb_metadata)
 
-# S05368 <- merge(x = S05368_HD_Caudate_DeepDive_rxn1,
-#                 y = c(S05368_HD_Caudate_DeepDive_rxn2,
-#                      S05368_HD_Caudate_DeepDive_rxn3))
+S05368 <- merge(x = S05368_HD_Caudate_DeepDive_rxn1,
+                y = c(S05368_HD_Caudate_DeepDive_rxn2,
+                     S05368_HD_Caudate_DeepDive_rxn3))
 
-# saveRDS(object = S05368, file = "S05368.rds")
+saveRDS(object = S05368, file = "S05368.rds")
 ```
 
 
 ```R
-# S06758_HD_Caudate_DeepDive_rxn1 <- Read_h5_file(h5_files["S06758_HD_Caudate_DeepDive_rxn1"], pb_metadata)
-# S06758_HD_Caudate_DeepDive_rxn2 <- Read_h5_file(h5_files["S06758_HD_Caudate_DeepDive_rxn2"], pb_metadata)
-# S06758_HD_Caudate_DeepDive_rxn3 <- Read_h5_file(h5_files["S06758_HD_Caudate_DeepDive_rxn3"], pb_metadata)
-# S06758_HD_Caudate_DeepDive_rxn4 <- Read_h5_file(h5_files["S06758_HD_Caudate_DeepDive_rxn4"], pb_metadata)
-# S06758_HD_Caudate_DeepDive_rxn5 <- Read_h5_file(h5_files["S06758_HD_Caudate_DeepDive_rxn5"], pb_metadata)
+S06758_HD_Caudate_DeepDive_rxn1 <- Read_h5_file(h5_files["S06758_HD_Caudate_DeepDive_rxn1"], pb_metadata)
+S06758_HD_Caudate_DeepDive_rxn2 <- Read_h5_file(h5_files["S06758_HD_Caudate_DeepDive_rxn2"], pb_metadata)
+S06758_HD_Caudate_DeepDive_rxn3 <- Read_h5_file(h5_files["S06758_HD_Caudate_DeepDive_rxn3"], pb_metadata)
+S06758_HD_Caudate_DeepDive_rxn4 <- Read_h5_file(h5_files["S06758_HD_Caudate_DeepDive_rxn4"], pb_metadata)
+S06758_HD_Caudate_DeepDive_rxn5 <- Read_h5_file(h5_files["S06758_HD_Caudate_DeepDive_rxn5"], pb_metadata)
 
-# S06758 <- merge(x = S06758_HD_Caudate_DeepDive_rxn1,
-#                 y = c(S06758_HD_Caudate_DeepDive_rxn2,
-#                      S06758_HD_Caudate_DeepDive_rxn3,
-#                      S06758_HD_Caudate_DeepDive_rxn4,
-#                      S06758_HD_Caudate_DeepDive_rxn5))
+S06758 <- merge(x = S06758_HD_Caudate_DeepDive_rxn1,
+                y = c(S06758_HD_Caudate_DeepDive_rxn2,
+                     S06758_HD_Caudate_DeepDive_rxn3,
+                     S06758_HD_Caudate_DeepDive_rxn4,
+                     S06758_HD_Caudate_DeepDive_rxn5))
 
-# saveRDS(object = S06758, file = "S06758.rds")
+saveRDS(object = S06758, file = "S06758.rds")
 ```
 
 
 ```R
-# S07681_HD_Caudate_DeepDive_rxn1 <- Read_h5_file(h5_files["S07681_HD_Caudate_DeepDive_rxn1"], pb_metadata)
-# S07681_HD_Caudate_DeepDive_rxn2 <- Read_h5_file(h5_files["S07681_HD_Caudate_DeepDive_rxn2"], pb_metadata)
-# S07681_HD_Caudate_DeepDive_rxn3 <- Read_h5_file(h5_files["S07681_HD_Caudate_DeepDive_rxn3"], pb_metadata)
-# S07681_HD_Caudate_DeepDive_rxn4 <- Read_h5_file(h5_files["S07681_HD_Caudate_DeepDive_rxn4"], pb_metadata)
-# S07681_HD_Caudate_DeepDive_rxn5 <- Read_h5_file(h5_files["S07681_HD_Caudate_DeepDive_rxn5"], pb_metadata)
-# S07681_HD_Caudate_DeepDive_rxn6 <- Read_h5_file(h5_files["S07681_HD_Caudate_DeepDive_rxn6"], pb_metadata)
+S07681_HD_Caudate_DeepDive_rxn1 <- Read_h5_file(h5_files["S07681_HD_Caudate_DeepDive_rxn1"], pb_metadata)
+S07681_HD_Caudate_DeepDive_rxn2 <- Read_h5_file(h5_files["S07681_HD_Caudate_DeepDive_rxn2"], pb_metadata)
+S07681_HD_Caudate_DeepDive_rxn3 <- Read_h5_file(h5_files["S07681_HD_Caudate_DeepDive_rxn3"], pb_metadata)
+S07681_HD_Caudate_DeepDive_rxn4 <- Read_h5_file(h5_files["S07681_HD_Caudate_DeepDive_rxn4"], pb_metadata)
+S07681_HD_Caudate_DeepDive_rxn5 <- Read_h5_file(h5_files["S07681_HD_Caudate_DeepDive_rxn5"], pb_metadata)
+S07681_HD_Caudate_DeepDive_rxn6 <- Read_h5_file(h5_files["S07681_HD_Caudate_DeepDive_rxn6"], pb_metadata)
 
-# S07681 <- merge(x = S07681_HD_Caudate_DeepDive_rxn1,
-#                 y = c(S07681_HD_Caudate_DeepDive_rxn2,
-#                      S07681_HD_Caudate_DeepDive_rxn3,
-#                      S07681_HD_Caudate_DeepDive_rxn4,
-#                      S07681_HD_Caudate_DeepDive_rxn5,
-#                      S07681_HD_Caudate_DeepDive_rxn6))
+S07681 <- merge(x = S07681_HD_Caudate_DeepDive_rxn1,
+                y = c(S07681_HD_Caudate_DeepDive_rxn2,
+                     S07681_HD_Caudate_DeepDive_rxn3,
+                     S07681_HD_Caudate_DeepDive_rxn4,
+                     S07681_HD_Caudate_DeepDive_rxn5,
+                     S07681_HD_Caudate_DeepDive_rxn6))
 
-# saveRDS(object = S07681, file = "S07681.rds")
+saveRDS(object = S07681, file = "S07681.rds")
 ```
 
 
 ```R
-# S09619_HD_Caudate_DeepDive_rxn1 <- Read_h5_file(h5_files["S09619_HD_Caudate_DeepDive_rxn1"], pb_metadata)
-# S09619_HD_Caudate_DeepDive_rxn2 <- Read_h5_file(h5_files["S09619_HD_Caudate_DeepDive_rxn2"], pb_metadata)
-# S09619_HD_Caudate_DeepDive_rxn3 <- Read_h5_file(h5_files["S09619_HD_Caudate_DeepDive_rxn3"], pb_metadata)
-# S09619_HD_Caudate_DeepDive_rxn4 <- Read_h5_file(h5_files["S09619_HD_Caudate_DeepDive_rxn4"], pb_metadata)
+S09619_HD_Caudate_DeepDive_rxn1 <- Read_h5_file(h5_files["S09619_HD_Caudate_DeepDive_rxn1"], pb_metadata)
+S09619_HD_Caudate_DeepDive_rxn2 <- Read_h5_file(h5_files["S09619_HD_Caudate_DeepDive_rxn2"], pb_metadata)
+S09619_HD_Caudate_DeepDive_rxn3 <- Read_h5_file(h5_files["S09619_HD_Caudate_DeepDive_rxn3"], pb_metadata)
+S09619_HD_Caudate_DeepDive_rxn4 <- Read_h5_file(h5_files["S09619_HD_Caudate_DeepDive_rxn4"], pb_metadata)
 
-# S09619 <- merge(x = S09619_HD_Caudate_DeepDive_rxn1,
-#                 y = c(S09619_HD_Caudate_DeepDive_rxn2,
-#                      S09619_HD_Caudate_DeepDive_rxn3,
-#                      S09619_HD_Caudate_DeepDive_rxn4))
+S09619 <- merge(x = S09619_HD_Caudate_DeepDive_rxn1,
+                y = c(S09619_HD_Caudate_DeepDive_rxn2,
+                     S09619_HD_Caudate_DeepDive_rxn3,
+                     S09619_HD_Caudate_DeepDive_rxn4))
 
-# saveRDS(object = S09619, file = "S09619.rds")
+saveRDS(object = S09619, file = "S09619.rds")
 ```
 
 
 ```R
-# S12365_HD_Caudate_DeepDive_rxn1 <- Read_h5_file(h5_files["S12365_HD_Caudate_DeepDive_rxn1"], pb_metadata)
-# S12365_HD_Caudate_DeepDive_rxn2 <- Read_h5_file(h5_files["S12365_HD_Caudate_DeepDive_rxn2"], pb_metadata)
-# S12365_HD_Caudate_DeepDive_rxn3 <- Read_h5_file(h5_files["S12365_HD_Caudate_DeepDive_rxn3"], pb_metadata)
-# S12365_HD_Caudate_DeepDive_rxn4 <- Read_h5_file(h5_files["S12365_HD_Caudate_DeepDive_rxn4"], pb_metadata)
+S12365_HD_Caudate_DeepDive_rxn1 <- Read_h5_file(h5_files["S12365_HD_Caudate_DeepDive_rxn1"], pb_metadata)
+S12365_HD_Caudate_DeepDive_rxn2 <- Read_h5_file(h5_files["S12365_HD_Caudate_DeepDive_rxn2"], pb_metadata)
+S12365_HD_Caudate_DeepDive_rxn3 <- Read_h5_file(h5_files["S12365_HD_Caudate_DeepDive_rxn3"], pb_metadata)
+S12365_HD_Caudate_DeepDive_rxn4 <- Read_h5_file(h5_files["S12365_HD_Caudate_DeepDive_rxn4"], pb_metadata)
 
-# S12365 <- merge(x = S12365_HD_Caudate_DeepDive_rxn1,
-#                 y = c(S12365_HD_Caudate_DeepDive_rxn2,
-#                      S12365_HD_Caudate_DeepDive_rxn3,
-#                      S12365_HD_Caudate_DeepDive_rxn4))
+S12365 <- merge(x = S12365_HD_Caudate_DeepDive_rxn1,
+                y = c(S12365_HD_Caudate_DeepDive_rxn2,
+                     S12365_HD_Caudate_DeepDive_rxn3,
+                     S12365_HD_Caudate_DeepDive_rxn4))
 
-# saveRDS(object = S12365, file = "S12365.rds")
+saveRDS(object = S12365, file = "S12365.rds")
 ```
 
 
 ```R
-# SPN_all <- merge(x = S02205_HD_Caudate_DeepDive_rxn1, 
-#                 y = c(S02205_HD_Caudate_DeepDive_rxn2, 
-#                       S02205_HD_Caudate_DeepDive_rxn3,
-#                       S02205_HD_Caudate_DeepDive_rxn4,
-#                       S04002_10X_rxn1,
-#                       S04002_10X_rxn2_merged,
-#                       S04002_10X_rxn3_merged,
-#                       S04002_10X_rxn4_merged,
-#                       S04002_rxn5,
-#                       S04002_rxn6,
-#                       S04002_rxn7,
-#                       S04002_rxn8,
-#                       S04577_HD_Caudate_DeepDive_rxn1,
-#                       S04577_HD_Caudate_DeepDive_rxn2,
-#                       S04577_HD_Caudate_DeepDive_rxn3,
-#                       S04577_HD_Caudate_DeepDive_rxn4,
-#                       S05202_HD_Caudate_DeepDive_rxn1,
-#                       S05202_HD_Caudate_DeepDive_rxn2,
-#                       S05202_HD_Caudate_DeepDive_rxn3,
-#                       S05368_HD_Caudate_DeepDive_rxn1,
-#                       S05368_HD_Caudate_DeepDive_rxn2,
-#                       S05368_HD_Caudate_DeepDive_rxn3,
-#                       S06758_HD_Caudate_DeepDive_rxn1,
-#                       S06758_HD_Caudate_DeepDive_rxn2,
-#                       S06758_HD_Caudate_DeepDive_rxn3,
-#                       S06758_HD_Caudate_DeepDive_rxn4,
-#                       S06758_HD_Caudate_DeepDive_rxn5,
-#                       S07681_HD_Caudate_DeepDive_rxn1,
-#                       S07681_HD_Caudate_DeepDive_rxn2,
-#                       S07681_HD_Caudate_DeepDive_rxn3,
-#                       S07681_HD_Caudate_DeepDive_rxn4,
-#                       S07681_HD_Caudate_DeepDive_rxn5,
-#                       S07681_HD_Caudate_DeepDive_rxn6,
-#                       S09619_HD_Caudate_DeepDive_rxn1,
-#                       S09619_HD_Caudate_DeepDive_rxn2,
-#                       S09619_HD_Caudate_DeepDive_rxn3,
-#                       S09619_HD_Caudate_DeepDive_rxn4,
-#                       S12365_HD_Caudate_DeepDive_rxn1,
-#                       S12365_HD_Caudate_DeepDive_rxn2,
-#                       S12365_HD_Caudate_DeepDive_rxn3,
-#                       S12365_HD_Caudate_DeepDive_rxn4))
+SPN_all <- merge(x = S02205_HD_Caudate_DeepDive_rxn1, 
+                y = c(S02205_HD_Caudate_DeepDive_rxn2, 
+                      S02205_HD_Caudate_DeepDive_rxn3,
+                      S02205_HD_Caudate_DeepDive_rxn4,
+                      S04002_10X_rxn1,
+                      S04002_10X_rxn2_merged,
+                      S04002_10X_rxn3_merged,
+                      S04002_10X_rxn4_merged,
+                      S04002_rxn5,
+                      S04002_rxn6,
+                      S04002_rxn7,
+                      S04002_rxn8,
+                      S04577_HD_Caudate_DeepDive_rxn1,
+                      S04577_HD_Caudate_DeepDive_rxn2,
+                      S04577_HD_Caudate_DeepDive_rxn3,
+                      S04577_HD_Caudate_DeepDive_rxn4,
+                      S05202_HD_Caudate_DeepDive_rxn1,
+                      S05202_HD_Caudate_DeepDive_rxn2,
+                      S05202_HD_Caudate_DeepDive_rxn3,
+                      S05368_HD_Caudate_DeepDive_rxn1,
+                      S05368_HD_Caudate_DeepDive_rxn2,
+                      S05368_HD_Caudate_DeepDive_rxn3,
+                      S06758_HD_Caudate_DeepDive_rxn1,
+                      S06758_HD_Caudate_DeepDive_rxn2,
+                      S06758_HD_Caudate_DeepDive_rxn3,
+                      S06758_HD_Caudate_DeepDive_rxn4,
+                      S06758_HD_Caudate_DeepDive_rxn5,
+                      S07681_HD_Caudate_DeepDive_rxn1,
+                      S07681_HD_Caudate_DeepDive_rxn2,
+                      S07681_HD_Caudate_DeepDive_rxn3,
+                      S07681_HD_Caudate_DeepDive_rxn4,
+                      S07681_HD_Caudate_DeepDive_rxn5,
+                      S07681_HD_Caudate_DeepDive_rxn6,
+                      S09619_HD_Caudate_DeepDive_rxn1,
+                      S09619_HD_Caudate_DeepDive_rxn2,
+                      S09619_HD_Caudate_DeepDive_rxn3,
+                      S09619_HD_Caudate_DeepDive_rxn4,
+                      S12365_HD_Caudate_DeepDive_rxn1,
+                      S12365_HD_Caudate_DeepDive_rxn2,
+                      S12365_HD_Caudate_DeepDive_rxn3,
+                      S12365_HD_Caudate_DeepDive_rxn4))
 
-# #Add metadata
-# SPN_all[["percent.mt"]] <- PercentageFeatureSet(SPN_all, pattern = "^MT-")
-# SPN_all[["SAMPLE"]] <- factor(unlist(lapply(strsplit(SPN_all@meta.data$sample_name, "_"), '[[', 1)))
-# SPN_all[["EXP_CAGLENGTH"]] <- NA
-# SPN_all[["PHASE"]] <- NA
-# SPN_all@meta.data$EXP_CAGLENGTH[which(SPN_all@meta.data$CAGLENGTH > 37)] <- SPN_all@meta.data$CAGLENGTH[which(SPN_all@meta.data$CAGLENGTH > 37)]
-# SPN_all@meta.data$PHASE[which(SPN_all@meta.data$EXP_CAGLENGTH < 150)] <- "A-B"
-# SPN_all@meta.data$PHASE[which(SPN_all@meta.data$EXP_CAGLENGTH >= 150)] <- "C-D-E"
+#Add metadata
+SPN_all[["percent.mt"]] <- PercentageFeatureSet(SPN_all, pattern = "^MT-")
+SPN_all[["SAMPLE"]] <- factor(unlist(lapply(strsplit(SPN_all@meta.data$sample_name, "_"), '[[', 1)))
+SPN_all[["EXP_CAGLENGTH"]] <- NA
+SPN_all[["PHASE"]] <- NA
+SPN_all@meta.data$EXP_CAGLENGTH[which(SPN_all@meta.data$CAGLENGTH > 37)] <- SPN_all@meta.data$CAGLENGTH[which(SPN_all@meta.data$CAGLENGTH > 37)]
+SPN_all@meta.data$PHASE[which(SPN_all@meta.data$EXP_CAGLENGTH < 150)] <- "A-B"
+SPN_all@meta.data$PHASE[which(SPN_all@meta.data$EXP_CAGLENGTH >= 150)] <- "C-D-E"
 
-# head(SPN_all@meta.data)
-
-# # SPN_all <- merge(x = S02205,
-# #                 y = c(S04002,
-# #                      S04577,
-# #                      S05202,
-# #                      S05368,
-# #                      S06758,
-# #                      S07681,
-# #                      S09619,
-# #                      S12365),
-# #                 add.cell.ids = c("S02205", "S04002", "S04577", "S05202", "S05368", "S06758", "S07681", "S09619", "S12365"),
-# #                  project = "snRNAseqCAG")
-
-# saveRDS(object = SPN_all, file = "/mnt/projects/labs/CLAB/PROJECT_ELongATE/SPN_all_raw.rds")
+saveRDS(object = SPN_all, file = "SPN_all_raw.rds")
 ```
 
 
 ```R
 #load dataset with SPNs from all samples
-SPN_all <- readRDS("/mnt/projects/labs/CLAB/PROJECT_ELongATE/SPN_all_raw.rds")
+SPN_all <- readRDS("SPN_all_raw.rds")
 ```
 
 
@@ -393,13 +373,7 @@ table(SPN_all@meta.data$DONOR)
 
 
 ```R
-str(SPN_all@meta.data)
-```
-
-
-```R
 sort(table(SPN_all@meta.data$orig.ident))
-#sort(table(SPN_all@meta.data$orig.ident[grep(x = SPN_all@meta.data$orig.ident, pattern = "S05202")]))
 ```
 
 
@@ -412,11 +386,11 @@ num_HD["S04577"] <- 0
 num_HD_exp <- table(unlist(lapply(strsplit(SPN_all@meta.data[which(SPN_all@meta.data$CAGLENGTH > 150), "sample_name"], "_"), '[[', 1)))
 num_HD_exp["S04577"] <- 0
 
-#tot
-#num_WT/tot[names(num_WT)]
-#num_HD/tot[names(num_HD)]
-#num_HD_exp/tot[names(num_HD_exp)]
-#num_HD_exp/num_HD[names(num_HD_exp)]
+tot
+num_WT/tot[names(num_WT)]
+num_HD/tot[names(num_HD)]
+num_HD_exp/tot[names(num_HD_exp)]
+num_HD_exp/num_HD[names(num_HD_exp)]
 
 df <- data.frame(DONOR = names(tot),
                  CONDITION = CONDITION[names(tot)],
@@ -426,9 +400,8 @@ df <- data.frame(DONOR = names(tot),
                  NUM_HD_SPN_CDE = as.numeric(num_HD_exp[names(tot)]),
                  FRACT_HD_SPN_CDE = sprintf("%.2f%%", 100*as.numeric(num_HD_exp[names(tot)])/as.numeric(num_HD[names(tot)])))
 df["S04577", "FRACT_HD_SPN_CDE"] <- "0.00%"
-#df
+
 df$CONDITION <- factor(df$CONDITION, levels = c("CTRL", "HD_PREM", "HD"))
-#df
 df_sort <- df[order(df$CONDITION), ]
 df_sort
 ```
@@ -442,15 +415,6 @@ mean(as.numeric(gsub(x = df_sort$FRACT_HD_SPN_CDE[-c(1, 2, 3)], pattern = "%", r
 
 
 ```R
-# head(S02205@meta.data)
-# head(S04002@meta.data)
-# head(S04577@meta.data)
-# head(S05202@meta.data)
-# head(S05368@meta.data)
-# head(S06758@meta.data)
-# head(S07681@meta.data)
-# head(S09619@meta.data)
-# head(S12365@meta.data)
 head(SPN_all@meta.data)
 SPN_all
 ```
@@ -459,68 +423,68 @@ SPN_all
 
 
 ```R
-# #Run SCTransform
-# SPN_all <- SCTransform(SPN_all, variable.features.n = 3000,  ncells = 5000)
-# #Run PCA
-# SPN_all <- RunPCA(SPN_all, features = VariableFeatures(object = SPN_all), npcs = 50, reduction.name = "pca")
-# ElbowPlot(SPN_all, reduction = "pca", ndims = 50)
-# num_dims <- 40
-# #Run UMAP
-# SPN_all <- RunUMAP(SPN_all, dims = 1:num_dims, reduction = "pca", reduction.name = "umap", reduction.key = "umap")
+#Run SCTransform
+SPN_all <- SCTransform(SPN_all, variable.features.n = 3000,  ncells = 5000)
+#Run PCA
+SPN_all <- RunPCA(SPN_all, features = VariableFeatures(object = SPN_all), npcs = 50, reduction.name = "pca")
+ElbowPlot(SPN_all, reduction = "pca", ndims = 50)
+num_dims <- 40
+#Run UMAP
+SPN_all <- RunUMAP(SPN_all, dims = 1:num_dims, reduction = "pca", reduction.name = "umap", reduction.key = "umap")
 ```
 
 
 ```R
-# #do clustering
-# SPN_all <- FindNeighbors(SPN_all, reduction = "pca", dims = 1:num_dims)
-# SPN_all <- FindClusters(SPN_all, resolution = 0.01, method = 4)
-# DimPlot(SPN_all, reduction = "umap", group.by = "seurat_clusters", pt.size = 1)
-# ggsave("UMAP_Handsaker_clusters.pdf", width = 8, height = 8)
+#do clustering
+SPN_all <- FindNeighbors(SPN_all, reduction = "pca", dims = 1:num_dims)
+SPN_all <- FindClusters(SPN_all, resolution = 0.01, method = 4)
+DimPlot(SPN_all, reduction = "umap", group.by = "seurat_clusters", pt.size = 1)
+ggsave("UMAP_Handsaker_clusters.pdf", width = 8, height = 8)
 ```
 
 
 ```R
-# table(SPN_all@meta.data$seurat_clusters)
+table(SPN_all@meta.data$seurat_clusters)
 ```
 
 
 ```R
-# #find gene markers for the two clusters
-# SPN_all <- PrepSCTFindMarkers(SPN_all, assay = "SCT", verbose = TRUE)
+#find gene markers for the two clusters
+SPN_all <- PrepSCTFindMarkers(SPN_all, assay = "SCT", verbose = TRUE)
 
-# # find markers for every cluster compared to all remaining cells, report only the positive ones
-# SPN_all.markers <- FindAllMarkers(SPN_all, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25, assay = "SCT")
+# find markers for every cluster compared to all remaining cells, report only the positive ones
+SPN_all.markers <- FindAllMarkers(SPN_all, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25, assay = "SCT")
 
-# #find the top marker for each cluster and plot their expression values
-# SPN_all_top_marker <- SPN_all.markers %>%
-#   group_by(cluster) %>%
-#   slice_max(n = 1, order_by = avg_log2FC)
+#find the top marker for each cluster and plot their expression values
+SPN_all_top_marker <- SPN_all.markers %>%
+  group_by(cluster) %>%
+  slice_max(n = 1, order_by = avg_log2FC)
 
-####################################
-# num_genes_plot <- 10
-# if (length(SPN_all_top_marker) < num_genes_plot) {
-#   chunks_genes <- list(1:length(SPN_all_top_marker))
-# } else {
-#   chunks_genes <- split(1:length(SPN_all_top_marker), ceiling(seq(from = 1, to = length(SPN_all_top_marker))/num_genes_plot))
-# }
+###################################
+num_genes_plot <- 10
+if (length(SPN_all_top_marker) < num_genes_plot) {
+  chunks_genes <- list(1:length(SPN_all_top_marker))
+} else {
+  chunks_genes <- split(1:length(SPN_all_top_marker), ceiling(seq(from = 1, to = length(SPN_all_top_marker))/num_genes_plot))
+}
 
-# #plot normalized counts
-# for (i in 1:length(chunks_genes)) {
-#     p <- VlnPlot(SPN_all, features = SPN_all_top_marker$gene[chunks_genes[[i]]]) 
-#     #+ ggtitle("Normalized counts for top markers")
-#     plot(p)
-#     ggsave(paste0("Handsaker_Normalized_MarkerGeneCounts_chunk", i, ".pdf"), device = pdf, height = 8, width = 8)
-# }
+#plot normalized counts
+for (i in 1:length(chunks_genes)) {
+    p <- VlnPlot(SPN_all, features = SPN_all_top_marker$gene[chunks_genes[[i]]]) 
+    #+ ggtitle("Normalized counts for top markers")
+    plot(p)
+    ggsave(paste0("Handsaker_Normalized_MarkerGeneCounts_chunk", i, ".pdf"), device = pdf, height = 8, width = 8)
+}
 ```
 
 
 ```R
-# saveRDS(object = SPN_all, file = "/mnt/projects/labs/CLAB/PROJECT_ELongATE/SPN_all.rds")
+saveRDS(object = SPN_all, file = "SPN_all.rds")
 ```
 
 
 ```R
-SPN_all <- readRDS("/mnt/projects/labs/CLAB/PROJECT_ELongATE/SPN_all.rds")
+SPN_all <- readRDS("SPN_all.rds")
 ```
 
 
@@ -579,7 +543,7 @@ ggsave("UMAP_Handsaker_splitBySample.pdf", width = 20, height = 20)
 
 ```R
 #read phase C-D file with all genes
-phaseCD_all_file <- "/mnt/projects/labs/CLAB/PROJECT_ELongATE/PhaseCD_all.txt"
+phaseCD_all_file <- "PhaseCD_all.txt"
 
 phaseCD_genes_all <- read.table(phaseCD_all_file, sep = "\t", header = TRUE)
 rownames(phaseCD_genes_all) <- phaseCD_genes_all$Gene
@@ -590,18 +554,8 @@ phaseCD_genes_all[intersect(rownames(phaseCD_genes_all), SPN_all_top_10_markers[
 
 ```R
 #create file with only phase C-, C+ and D genes
-phaseCD_file <- "/mnt/projects/labs/CLAB/PROJECT_ELongATE/PhaseCD.txt"
+phaseCD_file <- "PhaseCD.txt"
 system(command = paste0("cat ", phaseCD_all_file, " | awk 'BEGIN {FS=\"\t\"} { if ($8 != NA) print }' > ", phaseCD_file))
-```
-
-
-```R
-#avoid discarding cluster 1; the following code reports the code for filtering out cluster 1
-# #filter only SPNs from cluster 0
-# SPN_all_unfiltered <- SPN_all
-# SPN_filt <- subset(x = SPN_all, subset = seurat_clusters == "0")
-# saveRDS(object = SPN_filt, file = "/mnt/projects/labs/CLAB/PROJECT_ELongATE/SPN_filtered.rds")
-# SPN_filt <- readRDS("/mnt/projects/labs/CLAB/PROJECT_ELongATE/SPN_filtered.rds")
 ```
 
 
@@ -623,13 +577,7 @@ p <- ggplot(SPN_filt@meta.data, aes(x = CAGLENGTH)) +
 geom_histogram(binwidth = 5, alpha = 0.5, position = "identity", fill = "#F8766D") +
 geom_vline(aes(xintercept = 150), colour="black", linetype = 2) +
 theme_classic()
-#   theme(legend.title = element_text(size = 10),
-#         legend.text = element_text(size = 10),
-#         axis.text.x = element_text(size = 10, angle = 90, vjust = 0.5),
-#         axis.text.y = element_text(size = 10),
-#         axis.title.x = element_text(size = 14),
-#         axis.title.y = element_text(size = 14),
-#         panel.background = element_blank())
+
 plot(p)
 ggsave("Handsaker_CAGLENGTH_hist.pdf", width = 8, height = 8)
 
@@ -637,26 +585,14 @@ p <- ggplot(SPN_filt@meta.data, aes(x = EXP_CAGLENGTH)) +
 geom_histogram(binwidth = 5, alpha = 0.5, position = "identity", fill = "#F8766D") +
 geom_vline(aes(xintercept = 150), colour="black", linetype = 2) +
 theme_classic()
-#   theme(legend.title = element_text(size = 10),
-#         legend.text = element_text(size = 10),
-#         axis.text.x = element_text(size = 10, angle = 90, vjust = 0.5),
-#         axis.text.y = element_text(size = 10),
-#         axis.title.x = element_text(size = 14),
-#         axis.title.y = element_text(size = 14),
-#         panel.background = element_blank())
+
 plot(p)
 ggsave("Handsaker_CAGLENGTH_EXP_hist.pdf", width = 8, height = 8)
 p <- ggplot(SPN_filt@meta.data, aes(x = EXP_CAGLENGTH, fill = SAMPLE)) +
 geom_histogram(binwidth = 5, alpha = 0.5, position = "identity") + 
 geom_vline(aes(xintercept = 150), colour="black", linetype = 2) +
 theme_classic()
-#   theme(legend.title = element_text(size = 10),
-#         legend.text = element_text(size = 10),
-#         axis.text.x = element_text(size = 10, angle = 90, vjust = 0.5),
-#         axis.text.y = element_text(size = 10),
-#         axis.title.x = element_text(size = 14),
-#         axis.title.y = element_text(size = 14),
-#         panel.background = element_blank())
+
 plot(p)
 ggsave("Handsaker_CAGLENGTH_hist_splitBySample.pdf", width = 8, height = 8)
 
@@ -677,13 +613,7 @@ p <- ggplot(SPN_filt@meta.data, aes(x = EXP_CAGLENGTH)) +
 geom_histogram(binwidth = 5, alpha = 0.5, position = "identity", fill = "#F8766D") +
 xlim(c(150, 1000)) +
 theme_classic()
-#   theme(legend.title = element_text(size = 10),
-#         legend.text = element_text(size = 10),
-#         axis.text.x = element_text(size = 10, angle = 90, vjust = 0.5),
-#         axis.text.y = element_text(size = 10),
-#         axis.title.x = element_text(size = 14),
-#         axis.title.y = element_text(size = 14),
-#         panel.background = element_blank())
+
 plot(p)
 ggsave("Handsaker_CAGLENGTH_hist_phaseC.pdf", width = 8, height = 8)
 
@@ -691,20 +621,14 @@ p <- ggplot(SPN_filt@meta.data, aes(x = EXP_CAGLENGTH, fill = SAMPLE)) +
 geom_histogram(binwidth = 5, alpha = 0.5, position = "identity") + 
 xlim(c(150, 1000)) +
 theme_classic()
-#   theme(legend.title = element_text(size = 10),
-#         legend.text = element_text(size = 10),
-#         axis.text.x = element_text(size = 10, angle = 90, vjust = 0.5),
-#         axis.text.y = element_text(size = 10),
-#         axis.title.x = element_text(size = 14),
-#         axis.title.y = element_text(size = 14),
-#         panel.background = element_blank())
+
 plot(p)
 ggsave("Handsaker_CAGLENGTH_hist_phaseC_splitBySample.pdf", width = 8, height = 8)
 ```
 
 
 ```R
-Handsaker_donor_metadata <- read.table("/mnt/projects/labs/CLAB/PROJECT_ELongATE/Handsaker/donor_metadata.txt", header = TRUE)
+Handsaker_donor_metadata <- read.table("Handsaker/donor_metadata.txt", header = TRUE)
 Handsaker_donor_metadata <- Handsaker_donor_metadata[which(Handsaker_donor_metadata$SID %in% unique(SPN_filt$DONOR)), ]
 rownames(Handsaker_donor_metadata) <- Handsaker_donor_metadata$SID
 Handsaker_donor_metadata
@@ -733,11 +657,10 @@ Handsaker_fract_CDE
 
 ```R
 Handsaker_fract_CDE_HD <- Handsaker_fract_CDE[which(Handsaker_fract_CDE$SAMPLE %in% rownames(Handsaker_donor_metadata)[which(Handsaker_donor_metadata$Status == "Case")]), ]
-#Handsaker_fract_CDE_CTRL <- Handsaker_fract_CDE[which(Handsaker_fract_CDE$SAMPLE %in% rownames(Handsaker_donor_metadata)[which(Handsaker_donor_metadata$Status == "Control")]), ]
+Handsaker_fract_CDE_CTRL <- Handsaker_fract_CDE[which(Handsaker_fract_CDE$SAMPLE %in% rownames(Handsaker_donor_metadata)[which(Handsaker_donor_metadata$Status == "Control")]), ]
 
 ggplot(Handsaker_fract_CDE_HD, aes(x = GRADE, y = FRACT_CDE, size = FRACT_SPN)) +
 geom_point(aes(size = FRACT_SPN), color = "#F8766D", alpha = 0.8, position = position_jitter(width = 0, height = 0)) +
-#scale_color_manual(values =c("#F8766D")) +
 theme_classic() +
 xlab("HD Grade") +
 ylim(c(0, 25)) +
@@ -749,15 +672,10 @@ ggsave("Handsaker_HD_fraction_CDE.pdf", width = 6, height = 6)
 
 
 ```R
-phaseC_file <- "/mnt/projects/labs/CLAB/PROJECT_ELongATE/PhaseCD.txt"
+phaseC_file <- "PhaseCD.txt"
 
 phaseC_genes_all <- read.table(phaseC_file, sep = "\t", header = TRUE)
 phaseC_genes <- phaseC_genes_all$Gene
-```
-
-
-```R
-length(phaseC_genes)
 ```
 
 
@@ -860,9 +778,6 @@ assess_metrics <- function(predictions, best_t, y_true, thresholds = NULL) {
   }, pred = predictions, class = y_true)
   #convert list of df to df   
   metrics_all <- do.call("rbind", tmp)
-  #choose which metric should be optimized
-  ##optimize F1 score
-  #best_thr <- thresholds[which.max(metrics[, "F1"])]
   #optimize recall with minimum target precision
   target_precision <- 0.99
   #if best_t was not already set on the training set, assess it
@@ -873,10 +788,6 @@ assess_metrics <- function(predictions, best_t, y_true, thresholds = NULL) {
     valid <- which.min(abs(metrics_all[, "thr"] - best_t))
     best_thr <- thresholds[valid]
   }
-  ##optimize precision with minimum target recall
-  #target_recall <- 0.95
-  #valid <- which(metrics[, "R"] >= target_recall)
-  #best_thr <- thresholds[valid[which.max(metrics[valid, "P"])]]
   metrics_final <- metrics_all[which(metrics_all$thr == best_thr)[1], ]
   return(metrics_final)
 }
@@ -941,8 +852,6 @@ for (i in 1:length(unique(training_test_data_phase$DONOR))) {
   
   res_phase_training_noNA[[i]] <- data.frame(pred = preds_phase_training_noNA[[i]], predicted_phase_training_noNA, PHASE = training_data_phase_noNA[, 1])
 
-  #acc_training <- (conf_mat_training[1, 1] + conf_mat_training[2, 2])/(sum(conf_mat_training))
-
   cat(sprintf("\n%s\n", it))
   cat(sprintf("\nOptimal threshold: %.3f\n", perf_phase_training_noNA[[i]]$thr))
   cat(sprintf("Phase model performances on training set\nAUC: %.3f\nThreshold: %.3f - Precision: %.3f - Recall: %.3f - F1 score: %.3f - Accuracy: %.3f\n", PR_curves_training_noNA[[i]]$auc.integral, perf_training_noNA[[i]]$thr, perf_training_noNA[[i]]$P, perf_training_noNA[[i]]$R, perf_training_noNA[[i]]$F1, perf_training_noNA[[i]]$acc))    
@@ -958,7 +867,6 @@ for (i in 1:length(unique(training_test_data_phase$DONOR))) {
                                 titlePR = paste0("Test set: ", it),
                                 thr_stats = preds_phase_training_noNA[[i]]) 
 
-  #models_phase[[i]] <- tmp_test[[1]]
   PR_curves_phase_test_noNA[[i]] <- tmp_test[[2]]
   preds_phase_test_noNA[[i]] <- tmp_test[[3]]
   perf_phase_test_noNA[[i]] <- tmp_test[[4]]
@@ -979,8 +887,6 @@ for (i in 1:length(unique(training_test_data_phase$DONOR))) {
    predicted_phase_test[which(preds_phase_test > perf_phase_test_noNA[[i]]$thr)] <- "C-D-E"
   
   res_phase_test[[i]] <- data.frame(pred = preds_phase_test, predicted_phase_test, PHASE = test_data_phase[, 1])
- 
-  #acc_test <- (conf_mat_test[1, 1] + conf_mat_test[2, 2])/(sum(conf_mat_test))
     
   cat(sprintf("Phase model performances on test set\nAUC: %.3f\nThreshold: %.3f - Precision: %.3f - Recall: %.3f - F1 score: %.3f - Accuracy: %.3f\n", PR_curves_test_noNA[[i]]$auc.integral, perf_test_noNA[[i]]$thr, perf_test_noNA[[i]]$P, perf_test_noNA[[i]]$R, perf_test_noNA[[i]]$F1, perf_test_noNA[[i]]$acc))
   cat(sprintf("Confusion matrix on test set\n"))
@@ -989,7 +895,6 @@ for (i in 1:length(unique(training_test_data_phase$DONOR))) {
 
   conf_mat_test <- table(res_phase_test[[i]][, c(2, 3)])
   print(conf_mat_test)
-    
 }
 ```
 
@@ -997,10 +902,10 @@ for (i in 1:length(unique(training_test_data_phase$DONOR))) {
 ```R
 saveRDS(object = models_phase, file = "Phase_models_leaveOneOut.Rds")
 saveRDS(object = PR_curves_phase_training_noNA, file = "PR_curves_training.Rds")
-#saveRDS(object = preds_phase_training_noNA, file = "Predictions_training.Rds")
+saveRDS(object = preds_phase_training_noNA, file = "Predictions_training.Rds")
 saveRDS(object = perf_phase_training_noNA, file = "Performances_training.Rds")
 saveRDS(object = PR_curves_phase_test_noNA, file = "PR_curves_training.Rds")
-#saveRDS(object = preds_phase_test_noNA, file = "Predictions_test.Rds")
+saveRDS(object = preds_phase_test_noNA, file = "Predictions_test.Rds")
 saveRDS(object = perf_phase_test_noNA, file = "Performances_test.Rds")
 saveRDS(object = res_phase_training_noNA, file = "Results_training_noNA.Rds")
 saveRDS(object = res_phase_test_noNA, file = "Results_test_noNA.Rds")
@@ -1081,7 +986,7 @@ res_phase_training_test <- data.frame(pred = preds_phase_training_test_noNA, pre
 ```R
 saveRDS(object = model_phase, file = "Phase_model_fullDataset.Rds")
 saveRDS(object = PR_curves_phase_training_test_noNA, file = "PR_curves_training_test.Rds")
-#saveRDS(object = preds_phase_training_test_noNA, file = "Predictions_training_test.Rds")
+saveRDS(object = preds_phase_training_test_noNA, file = "Predictions_training_test.Rds")
 saveRDS(object = perf_phase_training_test_noNA, file = "Performances_training_test.Rds")
 saveRDS(object = res_phase_training_test, file = "Results_training_test.Rds")
 ```
@@ -1150,7 +1055,7 @@ length(which(res_training_test$PHASE == "C-D-E"))
 
 ```R
 #add predicted phase to HD samples and plot UMAP
-#SPN_filt@meta.data[, "PREDICTED_PHASE"] <- predicted_phase_all
+SPN_filt@meta.data[, "PREDICTED_PHASE"] <- predicted_phase_all
 ```
 
 
@@ -1162,11 +1067,6 @@ SPN_filt@meta.data$CONDITION_BIN[which(SPN_filt@meta.data$CONDITION_BIN == "HD_P
 
 ```R
 table(SPN_filt@meta.data$PHASE, SPN_filt@meta.data$PREDICTED_PHASE)
-```
-
-
-```R
-(8580+214)/(8580+214+19+560)
 ```
 
 
@@ -1371,7 +1271,6 @@ Evaluate_correlation <- function(Data, x, y, quant_thr = 1, abl = TRUE, notes = 
   }
   dev.off()
   
-  #smoothScatter(Data[, x], Data[, y], xlab = x, main = paste0(y, " VS ", x, "\n r Pearson. = ",
   smoothScatter(Data[, x], Data[, y], xlab = x, main = paste0(y, " VS ", x, "\n r Spearman = ",
                 sprintf("%.2f", correlation), "\n ", notes, " - n = ", dim(Data)[1]), ylab = y, cex.main = 0.6, cex.axis = 0.8,
                 xlim = c(0, quantile(c(Data[, x], Data[, y]), quant_thr, na.rm = TRUE)), ylim = c(0, quantile(c(Data[, x], Data[, y]), quant_thr, na.rm = TRUE)))
@@ -1380,7 +1279,6 @@ Evaluate_correlation <- function(Data, x, y, quant_thr = 1, abl = TRUE, notes = 
     abline(0, 1, col = "green")
   }
     
-  #print(paste0(y, " VS ", x, "\n r Pearson. = ", 
   print(paste0(y, " VS ", x, "\n r Spearman = ", 
               sprintf("%.2f", correlation), "\n ", notes, " - n = ", dim(Data)[1]))
   
@@ -1390,26 +1288,16 @@ Evaluate_correlation <- function(Data, x, y, quant_thr = 1, abl = TRUE, notes = 
   
   p <- ggplot(df, aes(x= CAG, fill = method, color = method)) +
   geom_density(alpha = 0.5, adjust = 1) +
-  #geom_histogram(binwidth = 5, alpha = 0.5, position = "identity") +
   scale_color_manual(values = c("purple", "green")) +
   scale_fill_manual(values = c("purple", "green")) +
   xlab("Num. CAG") + ylab("Num. SPNs") +
   theme_classic()
-#   theme(legend.title = element_text(size = 10),
-#         legend.text = element_text(size = 10),
-#         axis.text.x = element_text(size = 10, angle = 90, vjust = 0.5),
-#         axis.text.y = element_text(size = 10),
-#         axis.title.x = element_text(size = 14),
-#         axis.title.y = element_text(size = 14),
-#         panel.background = element_blank())
 
 print(gsub(x = notes, pattern = "_", replacement = " "))
-  #  +  geom_vline(aes(xintercept = 150), colour="black", linetype = 2)
   
   plot(p)
   
   ggsave(paste0("AccuracyPred_hist_", notes, ".pdf"), width = 8, height = 8)
-  #return(p)
 
   #residuals
   residuals <- Data[, x] - Data[, y]
@@ -1652,7 +1540,7 @@ head(predicted_phase_all_wprob)
 
 
 ```R
-#saveRDS(fit_glm, "CAG_sizing_model.rds")
+saveRDS(fit_glm, "CAG_sizing_model.rds")
 ```
 
 
@@ -1684,8 +1572,6 @@ coef(fit_glm, s = lambda_val)[, 1][selected_features]
 #sort SPNs of filtered training set by CAG length
 training_test_data_filtered_sorted <- training_test_data_filtered[order(training_test_data_filtered$CAGLENGTH_SPN_sized), ]
 head(training_test_data_filtered_sorted)
-#plot(training_data_filtered_sorted[, 1], apply(training_data_filtered_sorted[, intersect(colnames(training_data_filtered_sorted), phaseC_plus_genes)], 1, mean))
-#plot(training_data_filtered_sorted[, 1], apply(training_data_filtered_sorted[, intersect(colnames(training_data_filtered_sorted), phaseC_minus_genes)], 1, mean))
 
 #plot average expression of all phase C+ and phase C- genes
 plot(training_test_data_filtered_sorted[, 1], apply(training_test_data_filtered_sorted[, intersect(intersect(colnames(training_test_data_filtered_sorted), phaseC_plus_genes), selected_features)], 1, mean))
@@ -1736,14 +1622,6 @@ ind_150_all <- df_allPhaseCgenes_sorted[which(df_allPhaseCgenes_sorted$CAGLENGTH
 p1 <- ggplot(df_allPhaseCgenes_sorted, aes(x = index, y = avg_expr_PhaseC, color = PHASE)) +
 geom_point(aes(x = index, y = avg_expr_PhaseC, color = PHASE), size = 1) +
 theme_classic() +
-# theme(legend.title = element_text(size = 10),
-#         legend.text = element_text(size = 10),
-#         #axis.text.x = element_text(size = 10, angle = 90, vjust = 0.5),
-#         axis.text.x = element_blank(),
-#         axis.text.y = element_text(size = 10),
-#         axis.title.x = element_text(size = 14),
-#         axis.title.y = element_text(size = 14),
-#         panel.background = element_blank()) +
 geom_vline(aes(xintercept = ind_150_all), colour="black", linetype = 2) +
 xlab("SPNs sorted by CAG length") +
 ylab("Average expression Phase C genes")
@@ -1759,16 +1637,7 @@ p2 <- ggplot(df_sorted, aes(x = index)) +
 geom_point(aes(y = score, color = PRED_PHASE, alpha = PROB_PHASE_CDE), size = 1) +
 geom_point(aes(y = CAGLENGTH_SPN_sized), size = 0.1) +
 theme_classic() +
-# theme(legend.title = element_text(size = 10),
-#         legend.text = element_text(size = 10),
-#         #axis.text.x = element_text(size = 10, angle = 90, vjust = 0.5),
-#         axis.text.x = element_blank(),
-#         axis.text.y = element_text(size = 10),
-#         axis.title.x = element_text(size = 14),
-#         axis.title.y = element_text(size = 14),
-#         panel.background = element_blank()) +
 geom_vline(aes(xintercept = ind_150), colour="black", linetype = 2) +
-#geom_hline(aes(yintercept = 150), colour="black", linetype = 2) +
 xlab("SPNs sorted by CAG length") +
 ylab("Number of CAG repeats")
 plot(p2)
@@ -1783,14 +1652,6 @@ p2_alt <- ggplot(df_sorted, aes(x = index)) +
 geom_point(aes(y = PROB_PHASE_CDE, color = PRED_PHASE, alpha = score), size = 1) +
 geom_point(aes(y = ifelse(CAGLENGTH_SPN_sized > 150, 1, 0))) +
 theme_classic() +
-# theme(legend.title = element_text(size = 10),
-#         legend.text = element_text(size = 10),
-#         #axis.text.x = element_text(size = 10, angle = 90, vjust = 0.5),
-#         axis.text.x = element_blank(),
-#         axis.text.y = element_text(size = 10),
-#         axis.title.x = element_text(size = 14),
-#         axis.title.y = element_text(size = 14),
-#         panel.background = element_blank()) +
 xlab("SPNs sorted by CAG length") +
 ylab("Probability of Phase C-D-E")
 plot(p2_alt)
@@ -1806,14 +1667,6 @@ p3 <- ggplot(df_sorted_filtered, aes(x = index)) +
 geom_point(aes(y = score, color = PRED_PHASE, alpha = PROB_PHASE_CDE), size = 1) +
 geom_point(aes(y = CAGLENGTH_SPN_sized), size = 0.1) +
 theme_classic() +
-# theme(legend.title = element_text(size = 10),
-#         legend.text = element_text(size = 10),
-#         #axis.text.x = element_text(size = 10, angle = 90, vjust = 0.5),
-#         axis.text.x = element_blank(),
-#         axis.text.y = element_text(size = 10),
-#         axis.title.x = element_text(size = 14),
-#         axis.title.y = element_text(size = 14),
-#         panel.background = element_blank()) +
 xlim(c(ind_150_filt, max(df_sorted_filtered$index))) +
 xlab("SPNs sorted by CAG length") +
 ylab("Number of CAG repeats")
@@ -1853,26 +1706,26 @@ SPN_CTRL <- subset(x = SPN_filt, subset = CONDITION == "CTRL")
 
 
 ```R
-# #import Lee counts
-# Lee_counts <- Read10X("/mnt/projects/labs/CLAB/PROJECT_ELongATE/Lee/data/renamed_data")
-# #create single-cell experiment
-# Lee_sce <- SingleCellExperiment(list(counts = Lee_counts))
-# #create Seurat object
-# Lee <- CreateSeuratObject(counts(Lee_sce), project = "Lee", min.cells = 0, min.features = 0)
-# #read metadata
-# Lee_metadata <- read.table("/mnt/projects/labs/CLAB/PROJECT_ELongATE/Lee/data/renamed_data/GSE152058_human_snRNA_processed_coldata.tsv", header = TRUE, sep = "\t")
-# #Lee_metadata
-# #table(Lee_metadata$CellType)
-# rownames(Lee_metadata) <- Lee_metadata$Barcode
-# Lee@meta.data <- cbind(Lee@meta.data, Lee_metadata[rownames(Lee@meta.data), ])
-# #head(Lee@meta.data)
-# Lee[["percent.mt"]] <- PercentageFeatureSet(Lee, pattern = "^MT-")
+#import Lee counts
+Lee_counts <- Read10X("Lee")
+#create single-cell experiment
+Lee_sce <- SingleCellExperiment(list(counts = Lee_counts))
+#create Seurat object
+Lee <- CreateSeuratObject(counts(Lee_sce), project = "Lee", min.cells = 0, min.features = 0)
+#read metadata
+Lee_metadata <- read.table("Lee/GSE152058_human_snRNA_processed_coldata.tsv", header = TRUE, sep = "\t")
+#Lee_metadata
+#table(Lee_metadata$CellType)
+rownames(Lee_metadata) <- Lee_metadata$Barcode
+Lee@meta.data <- cbind(Lee@meta.data, Lee_metadata[rownames(Lee@meta.data), ])
+#head(Lee@meta.data)
+Lee[["percent.mt"]] <- PercentageFeatureSet(Lee, pattern = "^MT-")
 ```
 
 
 ```R
 #read metadata
-Lee_metadata <- read.table("/mnt/projects/labs/CLAB/PROJECT_ELongATE/Lee/data/renamed_data/GSE152058_human_snRNA_processed_coldata.tsv", header = TRUE, sep = "\t")
+Lee_metadata <- read.table("Lee/GSE152058_human_snRNA_processed_coldata.tsv", header = TRUE, sep = "\t")
 #Lee_metadata
 table(Lee_metadata$CellType)
 ```
@@ -1898,45 +1751,44 @@ num_cells_Lee
 
 
 ```R
-# #subset MSNs only
-# Lee_MSN <- subset(x = Lee, subset = CellType == "D1_MSN" | CellType == "D2_MSN")
+#subset MSNs only
+Lee_MSN <- subset(x = Lee, subset = CellType == "D1_MSN" | CellType == "D2_MSN")
 ```
 
 # Lee_Caudate_only
 
 
 ```R
-# #subset caudate only
-# Lee_MSN_Caudate <- subset(x = Lee_MSN, subset = Region == "Caudate")
+#subset caudate only
+Lee_MSN_Caudate <- subset(x = Lee_MSN, subset = Region == "Caudate")
 ```
 
 
 ```R
-# #Run SCTransform
-# Lee_MSN_Caudate <- SCTransform(Lee_MSN_Caudate, vars.to.regress = c("nCount_RNA", "nFeature_RNA", "percent.mt"))
-# #Lee_MSN_Caudate <- SCTransform(Lee_MSN_Caudate)
-# cat(sprintf("Num. features = %d; Num. SPN = %d\n", dim(Lee_MSN_Caudate)[1], dim(Lee_MSN_Caudate)[2]))
-# #Run PCA and UMAP
-# Lee_MSN_Caudate <- RunPCA(Lee_MSN_Caudate, features = VariableFeatures(object = Lee_MSN_Caudate), npcs = 50, reduction.name = "pca")
-# ElbowPlot(Lee_MSN_Caudate, reduction = "pca", ndims = 50)
-# num_dims <- 40
-# Lee_MSN_Caudate <- RunUMAP(Lee_MSN_Caudate, dims = 1:num_dims, reduction = "pca", reduction.name = "umap", reduction.key = "umap")
-# DimPlot(Lee_MSN_Caudate, group.by = "Batch", reduction = "umap", pt.size = 1)
-# Lee_MSN_Caudate@meta.data$Batch <- factor(Lee_MSN_Caudate@meta.data$Batch)
-# Lee_MSN_Caudate <- RunHarmony(object = Lee_MSN_Caudate, reduction.use = "pca", group.by.vars = "Batch", 
-#                            reduction.save = "harmonyPca", assay = "SCT", verbose = FALSE, normalization.method = "SCT")
-# Lee_MSN_Caudate <- RunUMAP(Lee_MSN_Caudate, dims = 1:num_dims, reduction = "harmonyPca", reduction.name = "harmony")
-# DimPlot(Lee_MSN_Caudate, group.by = "Batch", reduction = "harmony", pt.size = 1)
+#Run SCTransform
+Lee_MSN_Caudate <- SCTransform(Lee_MSN_Caudate, vars.to.regress = c("nCount_RNA", "nFeature_RNA", "percent.mt"))
+cat(sprintf("Num. features = %d; Num. SPN = %d\n", dim(Lee_MSN_Caudate)[1], dim(Lee_MSN_Caudate)[2]))
+#Run PCA and UMAP
+Lee_MSN_Caudate <- RunPCA(Lee_MSN_Caudate, features = VariableFeatures(object = Lee_MSN_Caudate), npcs = 50, reduction.name = "pca")
+ElbowPlot(Lee_MSN_Caudate, reduction = "pca", ndims = 50)
+num_dims <- 40
+Lee_MSN_Caudate <- RunUMAP(Lee_MSN_Caudate, dims = 1:num_dims, reduction = "pca", reduction.name = "umap", reduction.key = "umap")
+DimPlot(Lee_MSN_Caudate, group.by = "Batch", reduction = "umap", pt.size = 1)
+Lee_MSN_Caudate@meta.data$Batch <- factor(Lee_MSN_Caudate@meta.data$Batch)
+Lee_MSN_Caudate <- RunHarmony(object = Lee_MSN_Caudate, reduction.use = "pca", group.by.vars = "Batch", 
+                           reduction.save = "harmonyPca", assay = "SCT", verbose = FALSE, normalization.method = "SCT")
+Lee_MSN_Caudate <- RunUMAP(Lee_MSN_Caudate, dims = 1:num_dims, reduction = "harmonyPca", reduction.name = "harmony")
+DimPlot(Lee_MSN_Caudate, group.by = "Batch", reduction = "harmony", pt.size = 1)
 ```
 
 
 ```R
-# saveRDS(object = Lee_MSN_Caudate, file = "/mnt/projects/labs/CLAB/PROJECT_ELongATE/Lee/data/renamed_data/Lee_MSN_Caudate.rds")
+saveRDS(object = Lee_MSN_Caudate, file = "Lee/Lee_MSN_Caudate.rds")
 ```
 
 
 ```R
-Lee_MSN_Caudate <- readRDS("/mnt/projects/labs/CLAB/PROJECT_ELongATE/Lee/data/renamed_data/Lee_MSN_Caudate.rds")
+Lee_MSN_Caudate <- readRDS("Lee/Lee_MSN_Caudate.rds")
 ```
 
 
@@ -1976,7 +1828,6 @@ phase_counts_Lee_MSN_Caudate <- rbind(phase_counts_Lee_MSN_Caudate, phaseC_genes
 ```R
 phase_counts_Lee_MSN_Caudate <- phase_counts_Lee_MSN_Caudate[colnames(phase_all), ]
 phase_test_Lee_MSN_Caudate <- data.frame(t(phase_counts_Lee_MSN_Caudate))
-#head(phase_test_Lee_MSN_Caudate)
 ```
 
 
@@ -2000,7 +1851,7 @@ lapply(split(Lee_MSN_Caudate@meta.data$PREDICTED_PHASE, Lee_MSN_Caudate@meta.dat
 
 
 ```R
-#Lee_MSN_Caudate@meta.data$Grade <- gsub(x = Lee_MSN_Caudate@meta.data$Grade, pattern = "HD", replacement = "")
+Lee_MSN_Caudate@meta.data$Grade <- gsub(x = Lee_MSN_Caudate@meta.data$Grade, pattern = "HD", replacement = "")
 table(Lee_MSN_Caudate@meta.data$Grade)
 tmp <- gsub(x = gsub(x = paste0("HD", Lee_MSN_Caudate@meta.data$Grade), pattern = "HDControl", replacement = "Control"), pattern = "HDHD", replacement = "HD")
 table(tmp)
@@ -2045,21 +1896,14 @@ Lee_Caudate_Grade_CDE_tmp <- lapply(split(Lee_MSN_Caudate@meta.data, Lee_MSN_Cau
         Fract_CDE <- rep(val, NUM_MSN_CT_SQ);
     return(data.frame(NUM_MSN_CT_SQ, CELL_TYPE, Fract_CDE))})
     df <- do.call(rbind, tmp)
-    #print(df)
-    #NUM_MSN <- length(x$PREDICTED_PHASE)
-    #Fract_CDE <- 100*length(which(x$PREDICTED_PHASE == "C-D-E"))/length(x$PREDICTED_PHASE)
-    #CELL_TYPE <- x$sub_type_4
-    #return(df)
-    #return(data.frame(SAMPLE = rep(SN, df$NUM_MSN_CT_SQ), GRADE = rep(GRADE, df$NUM_MSN_CT_SQ), CELL_TYPE = df$CELL_TYPE, Fract_CDE = df$Fract_CDE, NUM_MSN_SQ=df$NUM_MSN_CT_SQ))
     return(data.frame(SAMPLE = SN, GRADE = GRADE, CELL_TYPE = df$CELL_TYPE, Fract_CDE = df$Fract_CDE, NUM_MSN_SQ=df$NUM_MSN_CT_SQ))
 })
 Lee_Caudate_Grade_CDE <- do.call(rbind, Lee_Caudate_Grade_CDE_tmp)
 Lee_Caudate_Grade_CDE <- Lee_Caudate_Grade_CDE[order(Lee_Caudate_Grade_CDE$GRADE), ]
 Lee_Caudate_Grade_CDE$SAMPLE <- factor(Lee_Caudate_Grade_CDE$SAMPLE, levels = unique(Lee_Caudate_Grade_CDE$SAMPLE))
-#head(Lee_Caudate_Grade_CDE)
+
 uni_Lee_Caudate_Grade_CDE <- unique(Lee_Caudate_Grade_CDE)
 uni_Lee_Caudate_Grade_CDE$NUM_SPN <- sqrt(uni_Lee_Caudate_Grade_CDE$NUM_MSN_SQ)
-#uni_Lee_Caudate_Grade_CDE
 ```
 
 
@@ -2118,18 +1962,6 @@ ggsave("Lee_Caudate_HD_GRADE_vs_fraction_SPN_CDE.pdf", width = 6, height = 6)
 
 
 ```R
-# ggplot(uni_Lee_Caudate_Grade_CDE[which(uni_Lee_Caudate_Grade_CDE$NUM_SPN > 50), ], aes(x = GRADE, y = Fract_CDE, color = CELL_TYPE)) +
-# geom_point(aes(size = Fract_SPN), alpha = 0.8, position = position_jitter(width = 0.1, height = 0)) +
-# scale_color_manual(values = c("#F8766D", "#619CFF")) +
-# theme_classic() +
-# xlab("HD GRADE") +
-# ylim(c(0, 100)) +
-# ylab("Fraction cells in C-D-E phase (%)")
-# ggsave("Lee_Caudate_GRADE_vs_fraction_SPN_CDE_gt50.pdf", width = 6, height = 6)
-```
-
-
-```R
 #subset HD
 Lee_HD_MSN_Caudate <- subset(x = Lee_MSN_Caudate, subset = Condition == "HD")
 ```
@@ -2138,37 +1970,37 @@ Lee_HD_MSN_Caudate <- subset(x = Lee_MSN_Caudate, subset = Condition == "HD")
 
 
 ```R
-# #subset caudate only
-# Lee_MSN_Putamen <- subset(x = Lee_MSN, subset = Region == "Putamen")
+#subset caudate only
+Lee_MSN_Putamen <- subset(x = Lee_MSN, subset = Region == "Putamen")
 ```
 
 
 ```R
-# #Run SCTransform
-# Lee_MSN_Putamen <- SCTransform(Lee_MSN_Putamen, vars.to.regress = c("nCount_RNA", "nFeature_RNA", "percent.mt"))
-# #Lee_MSN_Putamen <- SCTransform(Lee_MSN_Putamen)
-# cat(sprintf("Num. features = %d; Num. SPN = %d\n", dim(Lee_MSN_Putamen)[1], dim(Lee_MSN_Putamen)[2]))
-# #Run PCA and UMAP for HD donors
-# Lee_MSN_Putamen <- RunPCA(Lee_MSN_Putamen, features = VariableFeatures(object = Lee_MSN_Putamen), npcs = 50, reduction.name = "pca")
-# ElbowPlot(Lee_MSN_Putamen, reduction = "pca", ndims = 50)
-# num_dims <- 40
-# Lee_MSN_Putamen <- RunUMAP(Lee_MSN_Putamen, dims = 1:num_dims, reduction = "pca", reduction.name = "umap", reduction.key = "umap")
-# DimPlot(Lee_MSN_Putamen, group.by = "Batch", reduction = "umap", pt.size = 1)
-# Lee_MSN_Putamen@meta.data$Batch <- factor(Lee_MSN_Putamen@meta.data$Batch)
-# Lee_MSN_Putamen <- RunHarmony(object = Lee_MSN_Putamen, reduction.use = "pca", group.by.vars = "Batch", 
-#                            reduction.save = "harmonyPca", assay = "SCT", verbose = FALSE, normalization.method = "SCT")
-# Lee_MSN_Putamen <- RunUMAP(Lee_MSN_Putamen, dims = 1:num_dims, reduction = "harmonyPca", reduction.name = "harmony")
-# DimPlot(Lee_MSN_Putamen, group.by = "Batch", reduction = "harmony", pt.size = 1)
+#Run SCTransform
+Lee_MSN_Putamen <- SCTransform(Lee_MSN_Putamen, vars.to.regress = c("nCount_RNA", "nFeature_RNA", "percent.mt"))
+#Lee_MSN_Putamen <- SCTransform(Lee_MSN_Putamen)
+cat(sprintf("Num. features = %d; Num. SPN = %d\n", dim(Lee_MSN_Putamen)[1], dim(Lee_MSN_Putamen)[2]))
+#Run PCA and UMAP for HD donors
+Lee_MSN_Putamen <- RunPCA(Lee_MSN_Putamen, features = VariableFeatures(object = Lee_MSN_Putamen), npcs = 50, reduction.name = "pca")
+ElbowPlot(Lee_MSN_Putamen, reduction = "pca", ndims = 50)
+num_dims <- 40
+Lee_MSN_Putamen <- RunUMAP(Lee_MSN_Putamen, dims = 1:num_dims, reduction = "pca", reduction.name = "umap", reduction.key = "umap")
+DimPlot(Lee_MSN_Putamen, group.by = "Batch", reduction = "umap", pt.size = 1)
+Lee_MSN_Putamen@meta.data$Batch <- factor(Lee_MSN_Putamen@meta.data$Batch)
+Lee_MSN_Putamen <- RunHarmony(object = Lee_MSN_Putamen, reduction.use = "pca", group.by.vars = "Batch", 
+                           reduction.save = "harmonyPca", assay = "SCT", verbose = FALSE, normalization.method = "SCT")
+Lee_MSN_Putamen <- RunUMAP(Lee_MSN_Putamen, dims = 1:num_dims, reduction = "harmonyPca", reduction.name = "harmony")
+DimPlot(Lee_MSN_Putamen, group.by = "Batch", reduction = "harmony", pt.size = 1)
 ```
 
 
 ```R
-# saveRDS(object = Lee_MSN_Putamen, file = "/mnt/projects/labs/CLAB/PROJECT_ELongATE/Lee/data/renamed_data/Lee_MSN_Putamen.rds")
+saveRDS(object = Lee_MSN_Putamen, file = "Lee/Lee_MSN_Putamen.rds")
 ```
 
 
 ```R
-Lee_MSN_Putamen <- readRDS("/mnt/projects/labs/CLAB/PROJECT_ELongATE/Lee/data/renamed_data/Lee_MSN_Putamen.rds")
+Lee_MSN_Putamen <- readRDS("Lee/Lee_MSN_Putamen.rds")
 ```
 
 
@@ -2196,7 +2028,6 @@ ggsave("UMAP_Lee_MSN_Putamen_REGION.pdf", width = 8, height = 8)
 #extract phase C genes in the model that are also expressed in the dataset
 phaseC_genes_Lee_MSN_Putamen <- intersect(colnames(phase_all), rownames(Lee_MSN_Putamen))
 phaseC_genes_notExpLee_MSN_Putamen_names <- setdiff(colnames(phase_all), rownames(Lee_MSN_Putamen))
-#phaseC_genes_notExpLee_MSN_Putamen_names
 phaseC_genes_notExpLee_MSN_Putamen <- matrix(data = 0, nrow = length(phaseC_genes_notExpLee_MSN_Putamen_names), ncol = dim(Lee_MSN_Putamen@assays$SCT$data)[2])
 rownames(phaseC_genes_notExpLee_MSN_Putamen) <- phaseC_genes_notExpLee_MSN_Putamen_names
 colnames(phaseC_genes_notExpLee_MSN_Putamen) <- colnames(Lee_MSN_Putamen@assays$SCT$data)
@@ -2208,13 +2039,11 @@ phase_counts_Lee_MSN_Putamen <- rbind(phase_counts_Lee_MSN_Putamen, phaseC_genes
 ```R
 phase_counts_Lee_MSN_Putamen <- phase_counts_Lee_MSN_Putamen[colnames(phase_all), ]
 phase_test_Lee_MSN_Putamen <- data.frame(t(phase_counts_Lee_MSN_Putamen))
-#head(phase_test_Lee_MSN_Putamen)
 ```
 
 
 ```R
 class_thr <- perf_training_test_noNA$thr
-#class_thr <- 0.1
 predicted_phase_test_Lee_MSN_Putamen_wprob <- predict(model_phase,
                                                       newx = as.matrix(phase_test_Lee_MSN_Putamen),
                                                       s = lambda_val,
@@ -2236,14 +2065,6 @@ lapply(split(Lee_MSN_Putamen@meta.data$PREDICTED_PHASE, Lee_MSN_Putamen@meta.dat
 
 
 ```R
-# lapply(split(Lee_MSN_Putamen@meta.data$PROB_PHASE_CDE, Lee_MSN_Putamen@meta.data$Condition), function(x) {
-#     quantile(x, probs = seq(0.8, 1, length.out = 101))
-# })
-```
-
-
-```R
-#summary(apply(phase_test_Lee_MSN_Putamen, 1, function(x) length(which(x > 0))))
 table(predicted_phase_test_Lee_MSN_Putamen)
 ```
 
@@ -2293,22 +2114,15 @@ Lee_Putamen_Grade_CDE_tmp <- lapply(split(Lee_MSN_Putamen@meta.data, Lee_MSN_Put
         names(val) <- "Fract_CDE";
         Fract_CDE <- rep(val, NUM_MSN_CT_SQ);
     return(data.frame(NUM_MSN_CT_SQ, CELL_TYPE, Fract_CDE))})
-    df <- do.call(rbind, tmp)
-    #print(df)
-    #NUM_MSN <- length(x$PREDICTED_PHASE)
-    #Fract_CDE <- 100*length(which(x$PREDICTED_PHASE == "C-D-E"))/length(x$PREDICTED_PHASE)
-    #CELL_TYPE <- x$sub_type_4
-    #return(df)
-    #return(data.frame(SAMPLE = rep(SN, df$NUM_MSN_CT_SQ), GRADE = rep(GRADE, df$NUM_MSN_CT_SQ), CELL_TYPE = df$CELL_TYPE, Fract_CDE = df$Fract_CDE, NUM_MSN_SQ=df$NUM_MSN_CT_SQ))
+    df <- do.call(rbind, tmp
     return(data.frame(SAMPLE = SN, GRADE = GRADE, CELL_TYPE = df$CELL_TYPE, Fract_CDE = df$Fract_CDE, NUM_MSN_SQ=df$NUM_MSN_CT_SQ))
 })
 Lee_Putamen_Grade_CDE <- do.call(rbind, Lee_Putamen_Grade_CDE_tmp)
 Lee_Putamen_Grade_CDE <- Lee_Putamen_Grade_CDE[order(Lee_Putamen_Grade_CDE$GRADE), ]
 Lee_Putamen_Grade_CDE$SAMPLE <- factor(Lee_Putamen_Grade_CDE$SAMPLE, levels = unique(Lee_Putamen_Grade_CDE$SAMPLE))
-#head(Lee_Putamen_Grade_CDE)
+
 uni_Lee_Putamen_Grade_CDE <- unique(Lee_Putamen_Grade_CDE)
 uni_Lee_Putamen_Grade_CDE$NUM_SPN <- sqrt(uni_Lee_Putamen_Grade_CDE$NUM_MSN_SQ)
-#uni_Lee_Putamen_Grade_CDE
 ```
 
 
@@ -2362,18 +2176,6 @@ ggsave("Lee_Putamen_HD_GRADE_vs_fraction_SPN_CDE.pdf", width = 6, height = 6)
 
 
 ```R
-# ggplot(uni_Lee_Putamen_Grade_CDE[which(uni_Lee_Putamen_Grade_CDE$NUM_SPN > 50), ], aes(x = GRADE, y = Fract_CDE, color = CELL_TYPE)) +
-# geom_point(aes(size = Fract_SPN), alpha = 0.8, position = position_jitter(width = 0.1, height = 0)) +
-# scale_color_manual(values = c("#F8766D", "#619CFF")) +
-# theme_classic() +
-# xlab("HD GRADE") +
-# ylim(c(0, 100)) +
-# ylab("Fraction cells in C-D-E phase (%)")
-# ggsave("Lee_Putamen_GRADE_vs_fraction_SPN_CDE_gt50.pdf", width = 6, height = 6)
-```
-
-
-```R
 str(Lee_Caudate_Grade_CDE)
 head(Lee_Caudate_Grade_CDE)
 str(Lee_Putamen_Grade_CDE)
@@ -2396,7 +2198,7 @@ Lee_HD_MSN_Putamen <- subset(x = Lee_MSN_Putamen, subset = Condition == "HD")
 
 
 ```R
-Paryani <- readRDS("/mnt/projects/labs/CLAB/PROJECT_ELongATE/Paryani/neuron_hd_obj_acc_caud_paper.rds")
+Paryani <- readRDS("Paryani/neuron_hd_obj_acc_caud_paper.rds")
 ```
 
 
@@ -2429,7 +2231,6 @@ tmp <- lapply(split(Paryani@meta.data, Paryani@meta.data$Donor), function(x) {
 })
 
 num_cells_Paryani <- do.call(rbind, tmp)
-#num_cells_Paryani
 ```
 
 
@@ -2442,28 +2243,28 @@ Paryani_MSN <- subset(x = Paryani, subset = sub_type_4 == "dSPN_1" | sub_type_4 
 
 
 ```R
-# Paryani_MSN_Caudate <- subset(x = Paryani_MSN, subset = Region == "Caudate")
+Paryani_MSN_Caudate <- subset(x = Paryani_MSN, subset = Region == "Caudate")
 ```
 
 
 ```R
-# #Run SCTransform
-# Paryani_MSN_Caudate <- SCTransform(Paryani_MSN_Caudate, vars.to.regress = c("nCount_RNA", "nFeature_RNA"))
-# #Run PCA and UMAP
-# Paryani_MSN_Caudate <- RunPCA(Paryani_MSN_Caudate, features = VariableFeatures(object = Paryani_MSN_Caudate), npcs = 50, reduction.name = "pca")
-# ElbowPlot(Paryani_MSN, reduction = "pca", ndims = 50)
-# num_dims <- 40
-# Paryani_MSN_Caudate <- RunUMAP(Paryani_MSN_Caudate, dims = 1:num_dims, reduction = "pca", reduction.name = "umap", reduction.key = "umap")
-# DimPlot(Paryani_MSN_Caudate, group.by = "Batch", reduction = "umap", pt.size = 3)
-# Paryani_MSN_Caudate <- RunHarmony(object = Paryani_MSN_Caudate, reduction.use = "pca", group.by.vars = "Batch", 
-#                            reduction.save = "harmonyPca", assay = "SCT", verbose = FALSE, normalization.method = "SCT")
-# Paryani_MSN_Caudate <- RunUMAP(Paryani_MSN_Caudate, dims = 1:num_dims, reduction = "harmonyPca", reduction.name = "harmony", reduction.key = "harmony")
+#Run SCTransform
+Paryani_MSN_Caudate <- SCTransform(Paryani_MSN_Caudate, vars.to.regress = c("nCount_RNA", "nFeature_RNA"))
+#Run PCA and UMAP
+Paryani_MSN_Caudate <- RunPCA(Paryani_MSN_Caudate, features = VariableFeatures(object = Paryani_MSN_Caudate), npcs = 50, reduction.name = "pca")
+ElbowPlot(Paryani_MSN, reduction = "pca", ndims = 50)
+num_dims <- 40
+Paryani_MSN_Caudate <- RunUMAP(Paryani_MSN_Caudate, dims = 1:num_dims, reduction = "pca", reduction.name = "umap", reduction.key = "umap")
+DimPlot(Paryani_MSN_Caudate, group.by = "Batch", reduction = "umap", pt.size = 3)
+Paryani_MSN_Caudate <- RunHarmony(object = Paryani_MSN_Caudate, reduction.use = "pca", group.by.vars = "Batch", 
+                           reduction.save = "harmonyPca", assay = "SCT", verbose = FALSE, normalization.method = "SCT")
+Paryani_MSN_Caudate <- RunUMAP(Paryani_MSN_Caudate, dims = 1:num_dims, reduction = "harmonyPca", reduction.name = "harmony", reduction.key = "harmony")
 ```
 
 
 ```R
-#save object
-# saveRDS(object = Paryani_MSN_Caudate, file = "Paryani_MSN_Caudate.rds")
+save object
+saveRDS(object = Paryani_MSN_Caudate, file = "Paryani_MSN_Caudate.rds")
 ```
 
 
@@ -2513,7 +2314,6 @@ phase_counts_Paryani_MSN_Caudate <- rbind(phase_counts_Paryani_MSN_Caudate, phas
 ```R
 phase_counts_Paryani_MSN_Caudate <- phase_counts_Paryani_MSN_Caudate[colnames(phase_test), ]
 phase_test_Paryani_MSN_Caudate <- data.frame(t(phase_counts_Paryani_MSN_Caudate))
-#head(phase_test_Paryani_MSN_Caudate)
 ```
 
 
@@ -2569,7 +2369,6 @@ fract_CDE_tmp_Caudate <- lapply(split(Paryani_MSN_Caudate@meta.data, Paryani_MSN
     num_CDE <- length(which(x$PREDICTED_PHASE == "C-D-E"))
     fraction_CDE <- num_CDE/num_SPN
     num_CAG <- gsub(x = x$CAG[1], pattern = "-.*", replacement = "")
-    #cat(sprintf("Fraction MSNs in C-D-E phase: %.2f\n", fraction_CDE*100))
     return(rbind(fraction_CDE, num_SPN, num_CAG))
 })
 fract_CDE_Caudate <- t(do.call(cbind, fract_CDE_tmp_Caudate))
@@ -2579,7 +2378,6 @@ fract_CDE_Paryani_Caudate <- data.frame(num_CAG_germ = as.numeric(fract_CDE_Caud
 cor_numCAGGerm_fractCDE_Paryani_Caudate <- weighted.cor(x = fract_CDE_Paryani_Caudate$num_CAG_germ, y = fract_CDE_Paryani_Caudate$fract_CDE, weights = fract_CDE_Paryani_Caudate$num_SPN, method = "pearson", na.rm = TRUE)
 
 print(cor_numCAGGerm_fractCDE_Paryani_Caudate)
-#plot(x = fract_CDE_Caudate$num_CAG_germ, y = fract_CDE_Caudate$fract_CDE)
 
 ggplot(fract_CDE_Paryani_Caudate, aes(x=num_CAG_germ, y=100*fract_CDE)) + 
   geom_point(col = "blue", aes(size = num_SPN))+
@@ -2587,8 +2385,6 @@ ggplot(fract_CDE_Paryani_Caudate, aes(x=num_CAG_germ, y=100*fract_CDE)) +
   theme_classic() +
   xlab("Num. CAG germline") +
   ylab("Fraction cells in C-D-E phase (%)")
-  #+ ggtitle(sprintf("Sp. corr = %.2f", cor_numCAGGerm_fractCDE_Caudate))
-  #+ xlim(c(36, 70)) + ylim(c(0, 1))
 ggsave("Paryani_NumCAGGermline_FractCDE_Caudate.pdf", width = 8, height = 8)
 ```
 
@@ -2622,12 +2418,6 @@ Paryani_Caudate_Grade_CDE_tmp <- lapply(split(Paryani_MSN_Caudate@meta.data, Par
         Fract_CDE <- rep(val, NUM_MSN_CT_SQ);
     return(data.frame(NUM_MSN_CT_SQ, CELL_TYPE, Fract_CDE))})
     df <- do.call(rbind, tmp)
-    #print(df)
-    #NUM_MSN <- length(x$PREDICTED_PHASE)
-    #Fract_CDE <- 100*length(which(x$PREDICTED_PHASE == "C-D-E"))/length(x$PREDICTED_PHASE)
-    #CELL_TYPE <- x$sub_type_4
-    #return(df)
-    #return(data.frame(SAMPLE = rep(SN, df$NUM_MSN_CT_SQ), GRADE = rep(GRADE, df$NUM_MSN_CT_SQ), CELL_TYPE = df$CELL_TYPE, Fract_CDE = df$Fract_CDE, NUM_MSN_SQ=df$NUM_MSN_CT_SQ))
     return(data.frame(SAMPLE = SN, GRADE = GRADE, CELL_TYPE = df$CELL_TYPE, Fract_CDE = df$Fract_CDE, NUM_MSN_SQ=df$NUM_MSN_CT_SQ))
 })
 Paryani_Caudate_Grade_CDE <- do.call(rbind, Paryani_Caudate_Grade_CDE_tmp)
@@ -2640,7 +2430,6 @@ head(Paryani_Caudate_Grade_CDE)
 ```R
 uni_Paryani_Caudate_Grade_CDE <- unique(Paryani_Caudate_Grade_CDE)
 uni_Paryani_Caudate_Grade_CDE$NUM_SPN <- sqrt(uni_Paryani_Caudate_Grade_CDE$NUM_MSN_SQ)
-#uni_Paryani_Caudate_Grade_CDE
 ```
 
 
@@ -2741,22 +2530,12 @@ Fract_SPN_Caudate <- c(num_cells_Paryani["T-4812", "num_dSPN1_caudate"]/num_cell
                        num_cells_Paryani["T-5714", "num_dSPN2_caudate"]/num_cells_Paryani["T-5714", "num_cells_caudate"],
                        num_cells_Paryani["T-5714", "num_iSPN1_caudate"]/num_cells_Paryani["T-5714", "num_cells_caudate"],
                        num_cells_Paryani["T-5714", "num_iSPN2_caudate"]/num_cells_Paryani["T-5714", "num_cells_caudate"])
-#Fract_SPN_Caudate
+
 uni_Paryani_Caudate_Grade_CDE$Fract_SPN <- Fract_SPN_Caudate
-#uni_Paryani_Caudate_Grade_CDE
 ```
 
 
 ```R
-# ggplot(Paryani_Caudate_Grade_CDE, aes(x = SAMPLE, y = Fract_CDE, color = CELL_TYPE)) +
-# geom_boxplot(varwidth = TRUE, lwd = 5, position = position_dodge2(preserve = "single")) +
-# scale_color_manual(values = c("#F8766D", "#7CAE00", "#00BFC4", "#C77CFF")) +
-# theme_classic() +
-# xlab("SAMPLE") +
-# ylim(c(0, 100)) +
-# ylab("Fraction cells in C-D-E phase (%)") 
-# ggsave("Paryani_Caudate_CELLTYPE_vs_fraction_SPN_CDE.pdf", width = 8, height = 8)
-
 uni_Paryani_Caudate_Grade_CDE_HD <- uni_Paryani_Caudate_Grade_CDE[which(uni_Paryani_Caudate_Grade_CDE$GRADE != "Control"), ]
 #uni_Paryani_Caudate_Grade_CDE_CTRL <- uni_Paryani_Caudate_Grade_CDE[which(uni_Paryani_Caudate_Grade_CDE$GRADE == "Control"), ]
 
@@ -2778,18 +2557,6 @@ unique(uni_Paryani_Caudate_Grade_CDE[, c("SAMPLE", "GRADE")])
 
 
 ```R
-# ggplot(uni_Paryani_Caudate_Grade_CDE[which(uni_Paryani_Caudate_Grade_CDE$NUM_SPN > 30), ], aes(x = GRADE, y = Fract_CDE, color = CELL_TYPE)) +
-# geom_point(aes(size = Fract_SPN), alpha = 0.8, position = position_jitter(width = 0.1, height = 0)) +
-# scale_color_manual(values =c("#F8766D", "#7CAE00", "#00BFC4", "#C77CFF")) +
-# theme_classic() +
-# xlab("HD GRADE") +
-# #ylim(c(0, 100)) +
-# ylab("Fraction cells in C-D-E phase (%)") 
-# ggsave("Paryani_Caudate_GRADE_vs_fraction_SPN_CDE_gt30.pdf", width = 6, height = 6)
-```
-
-
-```R
 #subset HD
 Paryani_HD_MSN_Caudate <- subset(x = Paryani_MSN_Caudate, subset = Condition == "HD")
 ```
@@ -2798,27 +2565,27 @@ Paryani_HD_MSN_Caudate <- subset(x = Paryani_MSN_Caudate, subset = Condition == 
 
 
 ```R
-# Paryani_MSN_Accumbens <- subset(x = Paryani_MSN, subset = Region == "Accumbens")
+Paryani_MSN_Accumbens <- subset(x = Paryani_MSN, subset = Region == "Accumbens")
 ```
 
 
 ```R
-# #Run SCTransform for HD donors
-# Paryani_MSN_Accumbens <- SCTransform(Paryani_MSN_Accumbens, vars.to.regress = c("nCount_RNA", "nFeature_RNA"))
-# #Run PCA and UMAP for HD donors
-# Paryani_MSN_Accumbens <- RunPCA(Paryani_MSN_Accumbens, features = VariableFeatures(object = Paryani_MSN_Accumbens), npcs = 50, reduction.name = "pca")
-# ElbowPlot(Paryani_MSN, reduction = "pca", ndims = 50)
-# num_dims <- 40
-# Paryani_MSN_Accumbens <- RunUMAP(Paryani_MSN_Accumbens, dims = 1:num_dims, reduction = "pca", reduction.name = "umap", reduction.key = "umap")
-# DimPlot(Paryani_MSN_Accumbens, group.by = "Batch", reduction = "umap", pt.size = 1)
-# Paryani_MSN_Accumbens <- RunHarmony(object = Paryani_MSN_Accumbens, reduction.use = "pca", group.by.vars = "Batch", 
-#                            reduction.save = "harmonyPca", assay = "SCT", verbose = FALSE, normalization.method = "SCT")
-# Paryani_MSN_Accumbens <- RunUMAP(Paryani_MSN_Accumbens, dims = 1:num_dims, reduction = "harmonyPca", reduction.name = "harmony", reduction.key = "harmony")
+#Run SCTransform for HD donors
+Paryani_MSN_Accumbens <- SCTransform(Paryani_MSN_Accumbens, vars.to.regress = c("nCount_RNA", "nFeature_RNA"))
+#Run PCA and UMAP for HD donors
+Paryani_MSN_Accumbens <- RunPCA(Paryani_MSN_Accumbens, features = VariableFeatures(object = Paryani_MSN_Accumbens), npcs = 50, reduction.name = "pca")
+ElbowPlot(Paryani_MSN, reduction = "pca", ndims = 50)
+num_dims <- 40
+Paryani_MSN_Accumbens <- RunUMAP(Paryani_MSN_Accumbens, dims = 1:num_dims, reduction = "pca", reduction.name = "umap", reduction.key = "umap")
+DimPlot(Paryani_MSN_Accumbens, group.by = "Batch", reduction = "umap", pt.size = 1)
+Paryani_MSN_Accumbens <- RunHarmony(object = Paryani_MSN_Accumbens, reduction.use = "pca", group.by.vars = "Batch", 
+                           reduction.save = "harmonyPca", assay = "SCT", verbose = FALSE, normalization.method = "SCT")
+Paryani_MSN_Accumbens <- RunUMAP(Paryani_MSN_Accumbens, dims = 1:num_dims, reduction = "harmonyPca", reduction.name = "harmony", reduction.key = "harmony")
 ```
 
 
 ```R
-# saveRDS(object = Paryani_MSN_Accumbens, file = "Paryani_MSN_Accumbens.rds")
+saveRDS(object = Paryani_MSN_Accumbens, file = "Paryani_MSN_Accumbens.rds")
 ```
 
 
@@ -2927,16 +2694,12 @@ fract_CDE_Paryani_Accumbens <- data.frame(num_CAG_germ = as.numeric(fract_CDE_Ac
 cor_numCAGGerm_fractCDE_Paryani_Accumbens <- weighted.cor(x = fract_CDE_Paryani_Accumbens$num_CAG_germ, y = fract_CDE_Paryani_Accumbens$fract_CDE, weights = fract_CDE_Paryani_Accumbens$num_SPN, method = "pearson", na.rm = TRUE)
 print(cor_numCAGGerm_fractCDE_Paryani_Accumbens)
 
-#plot(x = fract_CDE_Accumbens$num_CAG_germ, y = fract_CDE_Accumbens$fract_CDE)
-
 ggplot(fract_CDE_Paryani_Accumbens, aes(x=num_CAG_germ, y=100*fract_CDE)) + 
   geom_point(col = "blue", aes(size = num_SPN))+
   geom_smooth(method=lm, se = TRUE, mapping = aes(weight = num_SPN)) +
   theme_classic() +
   xlab("Num. CAG germline") +
   ylab("Fraction cells in C-D-E phase (%)")
-  #+ ggtitle(sprintf("Sp. corr = %.2f", cor_numCAGGerm_fractCDE_Accumbens))
-  #+ xlim(c(36, 70)) + ylim(c(0, 1))
 ggsave("Paryani_NumCAGGermline_FractCDE_Accumbens.pdf", width = 8, height = 8)
 ```
 
@@ -2975,26 +2738,17 @@ Paryani_Accumbens_Grade_CDE_tmp <- lapply(split(Paryani_MSN_Accumbens@meta.data,
         Fract_CDE <- rep(val, NUM_MSN_CT_SQ);
     return(data.frame(NUM_MSN_CT_SQ, CELL_TYPE, Fract_CDE))})
     df <- do.call(rbind, tmp)
-    #print(df)
-    #NUM_MSN <- length(x$PREDICTED_PHASE)
-    #Fract_CDE <- 100*length(which(x$PREDICTED_PHASE == "C-D-E"))/length(x$PREDICTED_PHASE)
-    #CELL_TYPE <- x$sub_type_4
-    #return(df)
-    #return(data.frame(SAMPLE = rep(SN, df$NUM_MSN_CT_SQ), GRADE = rep(GRADE, df$NUM_MSN_CT_SQ), CELL_TYPE = df$CELL_TYPE, Fract_CDE = df$Fract_CDE, NUM_MSN_SQ=df$NUM_MSN_CT_SQ))
     return(data.frame(SAMPLE = SN, GRADE = GRADE, CELL_TYPE = df$CELL_TYPE, Fract_CDE = df$Fract_CDE, NUM_MSN_SQ=df$NUM_MSN_CT_SQ))
 })
 Paryani_Accumbens_Grade_CDE <- do.call(rbind, Paryani_Accumbens_Grade_CDE_tmp)
 Paryani_Accumbens_Grade_CDE <- Paryani_Accumbens_Grade_CDE[order(Paryani_Accumbens_Grade_CDE$GRADE), ]
 Paryani_Accumbens_Grade_CDE$SAMPLE <- factor(Paryani_Accumbens_Grade_CDE$SAMPLE, levels = unique(Paryani_Accumbens_Grade_CDE$SAMPLE))
-#head(Paryani_Accumbens_Grade_CDE)
 ```
 
 
 ```R
 uni_Paryani_Accumbens_Grade_CDE <- unique(Paryani_Accumbens_Grade_CDE)
 uni_Paryani_Accumbens_Grade_CDE$NUM_SPN <- sqrt(uni_Paryani_Accumbens_Grade_CDE$NUM_MSN_SQ)
-#uni_Paryani_Accumbens_Grade_CDE
-#uni_Paryani_Caudate_Grade_CDE[which(uni_Paryani_Accumbens_Grade_CDE$CELL_TYPE == "iSPN_2"), ]
 ```
 
 
@@ -3097,15 +2851,6 @@ unique(uni_Paryani_Accumbens_Grade_CDE[, c("SAMPLE", "GRADE")])
 
 
 ```R
-# ggplot(Paryani_Accumbens_Grade_CDE, aes(x = SAMPLE, y = Fract_CDE, color = CELL_TYPE)) +
-# geom_boxplot(varwidth = TRUE, lwd = 5, position = position_dodge2(preserve = "single")) +
-# scale_color_manual(values = c("#F8766D", "#7CAE00", "#00BFC4", "#C77CFF")) +
-# theme_classic() +
-# xlab("SAMPLE") +
-# ylim(c(0, 100)) +
-# ylab("Fraction cells in C-D-E phase (%)") 
-# ggsave("Paryani_Accumbens_CELLTYPE_vs_fraction_SPN_CDE.pdf", width = 8, height = 8)
-
 uni_Paryani_Accumbens_Grade_CDE_HD <- uni_Paryani_Accumbens_Grade_CDE[which(uni_Paryani_Accumbens_Grade_CDE$GRADE != "Control"), ]
 #uni_Paryani_Accumbens_Grade_CDE_CTRL <- uni_Paryani_Accumbens_Grade_CDE[which(uni_Paryani_Accumbens_Grade_CDE$GRADE == "Control"), ]
 
@@ -3118,18 +2863,6 @@ xlab("HD GRADE") +
 ylim(c(0, 100)) +
 ylab("Fraction cells in C-D-E phase (%)") 
 ggsave("Paryani_Accumbens_HD_GRADE_vs_fraction_SPN_CDE.pdf", width = 6, height = 6)
-```
-
-
-```R
-# ggplot(uni_Paryani_Accumbens_Grade_CDE[which(uni_Paryani_Accumbens_Grade_CDE$NUM_SPN > 30), ], aes(x = GRADE, y = Fract_CDE, color = CELL_TYPE)) +
-# geom_point(aes(size = Fract_SPN), alpha = 0.8, position = position_jitter(width = 0.1, height = 0)) +
-# scale_color_manual(values =c("#F8766D", "#7CAE00", "#00BFC4", "#C77CFF")) +
-# theme_classic() +
-# xlab("HD GRADE") +
-# ylim(c(0, 100)) +
-# ylab("Fraction cells in C-D-E phase (%)") 
-# ggsave("Paryani_Accumbens_GRADE_vs_fraction_SPN_CDE_gt30.pdf", width = 6, height = 6)
 ```
 
 
@@ -3160,7 +2893,6 @@ Lee_fract_CDE_tmp_Caudate_CTRL <- lapply(split(Lee_CTRL_MSN_Caudate@meta.data, L
     num_CDE <- length(which(x$PREDICTED_PHASE == "C-D-E"))
     fraction_CDE <- num_CDE/num_SPN
     num_CAG <- gsub(x = x$CAG[1], pattern = "-.*", replacement = "")
-    #cat(sprintf("Fraction MSNs in C-D-E phase: %.2f\n", fraction_CDE*100))
     df <- data.frame(DATASET = "Lee", SAMPLE, PRED_FRACT_CDE=fraction_CDE, NUM_SPN = num_SPN, TISSUE = "Caudate")
     return(df)
 })
@@ -3178,7 +2910,6 @@ Fract_SPN_Caudate <- c((num_cells_Lee["3345", "num_D1_SPN_caudate"] + num_cells_
                        (num_cells_Lee["A39R", "num_D1_SPN_caudate"] + num_cells_Lee["A39R", "num_D2_SPN_caudate"])/num_cells_Lee["A39R", "num_cells_caudate"],
                        (num_cells_Lee["A47L", "num_D1_SPN_caudate"] + num_cells_Lee["A47L", "num_D2_SPN_caudate"])/num_cells_Lee["A47L", "num_cells_caudate"])
 Lee_fract_CDE_Caudate_CTRL$Fract_SPN <- Fract_SPN_Caudate
-#Lee_fract_CDE_Caudate_CTRL
 ```
 
 
@@ -3194,7 +2925,6 @@ Lee_fract_CDE_tmp_Putamen_CTRL <- lapply(split(Lee_CTRL_MSN_Putamen@meta.data, L
     df <- data.frame(DATASET = "Lee", SAMPLE, PRED_FRACT_CDE=fraction_CDE, NUM_SPN = num_SPN, TISSUE = "Putamen")
     return(df)
 })
-#Lee_fract_CDE_tmp_Caudate_CTRL
 Lee_fract_CDE_Putamen_CTRL <- do.call(rbind, Lee_fract_CDE_tmp_Putamen_CTRL)
 ```
 
@@ -3206,7 +2936,6 @@ Fract_SPN_Putamen <- c((num_cells_Lee["4294", "num_D1_SPN_putamen"] + num_cells_
                        (num_cells_Lee["A39R", "num_D1_SPN_putamen"] + num_cells_Lee["A39R", "num_D2_SPN_putamen"])/num_cells_Lee["A39R", "num_cells_putamen"],
                        (num_cells_Lee["A47L", "num_D1_SPN_putamen"] + num_cells_Lee["A47L", "num_D2_SPN_putamen"])/num_cells_Lee["A47L", "num_cells_putamen"])
 Lee_fract_CDE_Putamen_CTRL$Fract_SPN <- Fract_SPN_Putamen
-#Lee_fract_CDE_Putamen_CTRL
 ```
 
 
@@ -3218,13 +2947,11 @@ Paryani_fract_CDE_tmp_Caudate_CTRL <- lapply(split(Paryani_CTRL_MSN_Caudate@meta
     num_CDE <- length(which(x$PREDICTED_PHASE == "C-D-E"))
     fraction_CDE <- num_CDE/num_SPN
     num_CAG <- gsub(x = x$CAG[1], pattern = "-.*", replacement = "")
-    #cat(sprintf("Fraction MSNs in C-D-E phase: %.2f\n", fraction_CDE*100))
     df <- data.frame(DATASET = "Paryani", SAMPLE, PRED_FRACT_CDE=fraction_CDE, NUM_SPN = num_SPN, TISSUE = "Caudate")
     return(df)
 })
-#Paryani_fract_CDE_tmp_Caudate_CTRL
+
 Paryani_fract_CDE_Caudate_CTRL <- do.call(rbind, Paryani_fract_CDE_tmp_Caudate_CTRL)
-#Paryani_fract_CDE_Caudate_CTRL
 ```
 
 
@@ -3235,9 +2962,7 @@ Fract_SPN_Caudate <- c((num_cells_Paryani["T-4812", "num_dSPN1_caudate"] +  num_
                        (num_cells_Paryani["T-5596", "num_dSPN1_caudate"] +  num_cells_Paryani["T-5596", "num_dSPN2_caudate"] + num_cells_Paryani["T-5596", "num_iSPN1_caudate"] + num_cells_Paryani["T-5596", "num_iSPN2_caudate"])/num_cells_Paryani["T-5596", "num_cells_caudate"],
                        (num_cells_Paryani["T-5700", "num_dSPN1_caudate"] +  num_cells_Paryani["T-5700", "num_dSPN2_caudate"] + num_cells_Paryani["T-5700", "num_iSPN1_caudate"] + num_cells_Paryani["T-5700", "num_iSPN2_caudate"])/num_cells_Paryani["T-5700", "num_cells_caudate"])
 
-#Fract_SPN_Caudate
 Paryani_fract_CDE_Caudate_CTRL$Fract_SPN <- Fract_SPN_Caudate
-#Paryani_fract_CDE_Caudate_CTRL
 ```
 
 
@@ -3249,13 +2974,10 @@ Paryani_fract_CDE_tmp_Accumbens_CTRL <- lapply(split(Paryani_CTRL_MSN_Accumbens@
     num_CDE <- length(which(x$PREDICTED_PHASE == "C-D-E"))
     fraction_CDE <- num_CDE/num_SPN
     num_CAG <- gsub(x = x$CAG[1], pattern = "-.*", replacement = "")
-    #cat(sprintf("Fraction MSNs in C-D-E phase: %.2f\n", fraction_CDE*100))
     df <- data.frame(DATASET = "Paryani", SAMPLE, PRED_FRACT_CDE=fraction_CDE, NUM_SPN = num_SPN, TISSUE = "Accumbens")
     return(df)
 })
-#Paryani_fract_CDE_tmp_Accumbens_CTRL
 Paryani_fract_CDE_Accumbens_CTRL <- do.call(rbind, Paryani_fract_CDE_tmp_Accumbens_CTRL)
-#Paryani_fract_CDE_Accumbens_CTRL
 ```
 
 
@@ -3265,9 +2987,7 @@ Fract_SPN_Accumbens <- c((num_cells_Paryani["T-4915", "num_dSPN1_accumbens"] +  
                        (num_cells_Paryani["T-5596", "num_dSPN1_accumbens"] +  num_cells_Paryani["T-5596", "num_dSPN2_accumbens"] + num_cells_Paryani["T-5596", "num_iSPN1_accumbens"] + num_cells_Paryani["T-5596", "num_iSPN2_accumbens"])/num_cells_Paryani["T-5596", "num_cells_accumbens"],
                        (num_cells_Paryani["T-5700", "num_dSPN1_accumbens"] +  num_cells_Paryani["T-5700", "num_dSPN2_accumbens"] + num_cells_Paryani["T-5700", "num_iSPN1_accumbens"] + num_cells_Paryani["T-5700", "num_iSPN2_accumbens"])/num_cells_Paryani["T-5700", "num_cells_accumbens"])
 
-#Fract_SPN_accumbens
 Paryani_fract_CDE_Accumbens_CTRL$Fract_SPN <- Fract_SPN_Accumbens
-#Paryani_fract_CDE_Accumbens_CTRL
 ```
 
 
@@ -3281,7 +3001,6 @@ CTRL_all_datasets
 #plot results for CTRL donors
 ggplot(CTRL_all_datasets, aes(x = TISSUE, color = DATASET, y = 100*PRED_FRACT_CDE, size = Fract_SPN)) +
 geom_point(aes(size = Fract_SPN), alpha = 0.8, position = position_jitter(width = 0.3, height = 0)) +
-#scale_color_manual(values =c("#F8766D")) +
 theme_classic() +
 xlab("Tissue") +
 ylim(c(0, 100)) +
@@ -3290,7 +3009,6 @@ ggsave("CTRL_all_datasets_fraction_CDE.pdf", width = 8, height = 8)
 
 ggplot(CTRL_all_datasets[which(CTRL_all_datasets$TISSUE == "Caudate"), ], aes(x = TISSUE, color = DATASET, y = 100*PRED_FRACT_CDE, size = Fract_SPN)) +
 geom_point(aes(size = Fract_SPN), alpha = 0.8, position = position_jitter(width = 0.5, height = 0)) +
-#scale_color_manual(values =c("#F8766D")) +
 theme_classic() +
 xlab("Tissue") +
 ylim(c(0, 100)) +
@@ -3299,13 +3017,11 @@ ggsave("CTRL_all_datasets_Caudate_fraction_CDE.pdf", width = 8, height = 8)
 
 ggplot(CTRL_all_datasets[which(CTRL_all_datasets$TISSUE != "Caudate"), ], aes(x = TISSUE, color = DATASET, y = 100*PRED_FRACT_CDE, size = Fract_SPN)) +
 geom_point(aes(size = Fract_SPN), alpha = 0.8, position = position_jitter(width = 0.3, height = 0)) +
-#scale_color_manual(values =c("#F8766D")) +
 theme_classic() +
 xlab("Tissue") +
 ylim(c(0, 100)) +
 ylab("Non-HD donors - Fraction cells in C-D-E phase (%)")
 ggsave("CTRL_all_datasets_nonCaudate_fraction_CDE.pdf", width = 8, height = 8)
-#"#7CAE00", "#00BFC4", "#C77CFF"
 ```
 
 
@@ -3335,7 +3051,7 @@ Read_10X_matrixes = function(folder, project = "") {
 
 
 ```R
-matrix_folders <- list.dirs(path = "/mnt/projects/labs/CLAB/PROJECT_ELongATE/Xu/", full.names = TRUE)
+matrix_folders <- list.dirs(path = "Xu", full.names = TRUE)
 matrix_folders <- matrix_folders[grep(x = basename(matrix_folders), pattern = "GSM")]
 names(matrix_folders) <- basename(matrix_folders)
 ```
@@ -3389,7 +3105,6 @@ percent.mt_max <- 10
 
 #filter cells
   # Visualize QC metrics as a violin plot
-  #plot(VlnPlot(Xu_all, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3))
   p1 <- VlnPlot(Xu_all_unfiltered, features = c("nFeature_RNA"), group.by = "orig.ident") + geom_hline(yintercept = nFeature_RNA_min, linetype = "dashed") + geom_hline(yintercept = nFeature_RNA_max, linetype = "dashed")
   p2 <- VlnPlot(Xu_all_unfiltered, features = c("nCount_RNA"), group.by = "orig.ident") + geom_hline(yintercept = nCount_RNA_min, linetype = "dashed") + geom_hline(yintercept = nCount_RNA_max, linetype = "dashed")
   #+ scale_y_continuous(limits = c(0, 2000)) 
@@ -3404,7 +3119,6 @@ percent.mt_max <- 10
   Xu_all <- subset(Xu_all, subset = nFeature_RNA > nFeature_RNA_min & nFeature_RNA < nFeature_RNA_max & percent.mt < percent.mt_max & nCount_RNA > nCount_RNA_min & nCount_RNA < nCount_RNA_max)
   cat(sprintf("Number of cells after QC: %d\n", length(Cells(x = Xu_all))))
   p1 <- VlnPlot(Xu_all, features = c("nFeature_RNA"), group.by = "orig.ident") + geom_hline(yintercept = nFeature_RNA_min, linetype = "dashed") + geom_hline(yintercept = nFeature_RNA_max, linetype = "dashed") + ggtitle("Post-filter nFeature_RNA")
-  #+ scale_y_continuous(limits = c(0, 2000)) 
   p2 <- VlnPlot(Xu_all, features = c("nCount_RNA"), group.by = "orig.ident") + geom_hline(yintercept = nCount_RNA_min, linetype = "dashed") + geom_hline(yintercept = nCount_RNA_max, linetype = "dashed") + ggtitle("Post-filter nCount_RNA")
   p3 <- VlnPlot(Xu_all, features = c("percent.mt"), group.by = "orig.ident") + geom_hline(yintercept = percent.mt_max, linetype = "dashed") + ggtitle("Post-filter percent.mt")
   plot(ggarrange(p1, p2, p3, ncol = 3))
@@ -3441,7 +3155,6 @@ FeaturePlot(Xu_all, reduction = "harmony", features = "DRD1", cols = c("blue", "
 ggsave("harmony_Xu_ALL_DRD1.pdf", width = 8, height = 8)
 FeaturePlot(Xu_all, reduction = "harmony", features = "DRD2", cols = c("blue", "red"), pt.size = 1)
 ggsave("harmony_Xu_ALL_DRD2.pdf", width = 8, height = 8)
-#FeaturePlot(Xu_all, reduction = "harmony", features = c("DRD1", "DRD2"), blend = TRUE, pt.size = 1)
 Xu_all <- AddModuleScore(object = Xu_all, features = list("DRD1", "DRD2"), name = "DRD1_DRD2")
 FeaturePlot(Xu_all, reduction = "harmony", features = "DRD1_DRD21", cols = c("blue", "red"), pt.size = 1) 
 FeaturePlot(Xu_all, reduction = "harmony", features = "nCount_RNA", cols = c("blue", "red"), pt.size = 1)
@@ -3467,34 +3180,6 @@ DimPlot(Xu_all_SPN, reduction = "harmony", group.by = "SAMPLE", pt.size = 1)
 ggsave("UMAP_Xu_MSN_ALL_SAMPLE.pdf", width = 8, height = 8)
 DimPlot(Xu_all_SPN, reduction = "harmony", group.by = "condition", pt.size = 1)
 ggsave("UMAP_Xu_MSN_ALL_SAMPLE.pdf", width = 8, height = 8)
-#FeaturePlot(Xu_all_SPN, reduction = "umap", features = "nCount_RNA", cols = c("blue", "red"), pt.size = 1)
-#FeaturePlot(Xu_all_SPN, reduction = "umap", features = "nFeature_RNA", cols = c("blue", "red"), pt.size = 1)
-#FeaturePlot(Xu_all_SPN, reduction = "umap", features = "percent.mt", cols = c("blue", "red"), pt.size = 1)
-```
-
-
-```R
-# Xu_CTRL_SPN <- subset(Xu_all_SPN, subset = condition == "CTRL")
-# Xu_AD_SPN <- subset(Xu_all_SPN, subset = condition == "AD")
-# Xu_PD_SPN <- subset(Xu_all_SPN, subset = condition == "PD")
-```
-
-
-```R
-# FeaturePlot(Xu_CTRL_SPN, reduction = "harmony", features = c("DRD1", "DRD2"), cols = c("blue", "red"), pt.size = 1)
-# FeaturePlot(Xu_CTRL_SPN, reduction = "harmony", features = c("DRD1", "DRD2"), cols = c("blue", "red"), pt.size = 1)
-# FeaturePlot(Xu_CTRL_SPN, reduction = "harmony", features = c("DRD1", "DRD2"), cols = c("blue", "red"), pt.size = 1)
-
-# DimPlot(Xu_CTRL_SPN, reduction = "harmony", group.by = "SAMPLE", pt.size = 1)
-# DimPlot(Xu_CTRL_SPN, reduction = "harmony", group.by = "condition", pt.size = 1)
-
-# FeaturePlot(Xu_AD_SPN, reduction = "harmony", features = c("DRD1", "DRD2"), cols = c("blue", "red"), pt.size = 1)
-# DimPlot(Xu_AD_SPN, reduction = "harmony", group.by = "SAMPLE", pt.size = 1)
-# DimPlot(Xu_AD_SPN, reduction = "harmony", group.by = "condition", pt.size = 1)
-
-# FeaturePlot(Xu_PD_SPN, reduction = "harmony", features = c("DRD1", "DRD2"), cols = c("blue", "red"), pt.size = 1)
-# DimPlot(Xu_PD_SPN, reduction = "harmony", group.by = "SAMPLE", pt.size = 1)
-# DimPlot(Xu_PD_SPN, reduction = "harmony", group.by = "condition", pt.size = 1)
 ```
 
 # Run_model_on_Xu_dataset
@@ -3733,23 +3418,6 @@ ggsave("Figure_1_noA.tiff", width = 18, height = 14)
 par(mar = c(3, 5, 1, 2) + 0.1)
 options(repr.plot.width=22, repr.plot.height=15) 
 
-
-# Data_filt2_tmp <- data.frame(CAG_measured = res_CAGsizing_test$S05202[which(res_CAGsizing_test$S05202$CAG_measured > 37), "CAG_measured"],
-#                          CAG_predicted = res_CAGsizing_test$S05202[which(res_CAGsizing_test$S05202$CAG_measured > 37), "CAG_predicted"],
-#                          PROB_PHASE_CDE = res_phase_test_noNA$S05202[, "lambda.min"],
-#                          PRED_PHASE =  res_phase_test_noNA$S05202[, "predicted_phase_test_noNA"])
-# Data_filt2 <- Data_filt2_tmp[order(Data_filt2_tmp$CAG_measured), ]
-# Data_filt2$index = sort(Data_filt2$CAG_measured, index.return = TRUE, decreasing = FALSE)$ix
-
-# ind_150 <- Data_filt2[which(Data_filt2$CAG_measured > 150), "index"][1]
-# p2_A <- ggplot(Data_filt2, aes(x = index)) +
-# geom_point(aes(y = CAG_predicted, color = PRED_PHASE, alpha = PROB_PHASE_CDE), size = 1) +
-# geom_point(aes(y = CAG_measured), size = 0.1) +
-# theme_classic() +
-# geom_vline(aes(xintercept = ind_150), colour="black", linetype = 2) +
-# xlab("SPNs sorted by CAG size") +
-# ylab("Number of CAG repeats")
-
 df_pr <- data.frame(
   recall = PR_curves_test_noNA$S05202$curve[, 1],
   precision = PR_curves_test_noNA$S05202$curve[, 2],
@@ -3777,12 +3445,6 @@ p2_A <- ggplot(df_pr, aes(recall, precision, color = cutoff)) +
     x = "Recall",
     y = "Precision"
   ) +
-#    geom_point(
-#     data = point_99,
-#     aes(x = recall, y = precision),
-#     color = "black",
-#     size = 5
-#   ) +
   theme_classic() +
 ggtitle("Test set for held-out donor: S02205") +  theme(plot.title = element_text(face = "plain", size = 15))
 
@@ -3812,18 +3474,6 @@ p2_C <- ggplot(Handsaker_donor_metadata_HD, aes(x=100*FRACT_CDE, y=100*PRED_FRAC
 # ggsave("Figure_2C.pdf", height = 8, width = 8)
 
 p2_C <- p2_C + labs(tag = "C") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
-
-# p2_C <- ggplot(df_allPhaseCgenes_sorted, aes(x = index, y = avg_expr_PhaseC, color = PHASE)) +
-# geom_point(aes(x = index, y = avg_expr_PhaseC, color = PHASE), size = 1) +
-# theme_classic() +
-# geom_vline(aes(xintercept = ind_150_all), colour="black", linetype = 2) +
-# xlab("SPNs sorted by CAG length") +
-# ylab("Average expression Phase C genes") +
-# labs(tag = "(C)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
-
-
-#Data_filt_tmp <- data.frame(CAG_measured = training_test_data[, "CAGLENGTH_SPN_sized"], CAG_predicted = pred_all[, 1])
-#Data_filt <- Data_filt_tmp[which(Data_filt_tmp$CAG_measured >= 150), ]
 
 Data_filt_tmp <- data.frame(CAG_measured = res_CAGsizing_test_expMeas$S05202[, "CAG_measured"],
                             CAG_predicted = res_CAGsizing_test_expMeas$S05202[, "CAG_predicted"])
@@ -3859,18 +3509,6 @@ ggtitle("Test set for held-out donor: S02205") +  theme(plot.title = element_tex
 # ggsave("Figure_2E.pdf", width = 8, height = 8)
 
 p2_E <- p2_E + labs(tag = "E") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
-
-#abline(0, 1, col = "green") 
-
-# ind_150 <- df_sorted[which(df_sorted$CAGLENGTH_SPN_sized > 150), "index"][1]
-# p2_F <- ggplot(df_sorted, aes(x = index)) +
-# geom_point(aes(y = score, color = PRED_PHASE, alpha = PROB_PHASE_CDE), size = 1) +
-# geom_point(aes(y = CAGLENGTH_SPN_sized), size = 0.1) +
-# theme_classic() +
-# geom_vline(aes(xintercept = ind_150), colour="black", linetype = 2) +
-# xlab("SPNs sorted by CAG length") +
-# ylab("Number of CAG repeats") + 
-# labs(tag = "(F)") + theme(plot.tag = element_text(size = 20, face = "bold", vjust = 1))
 
 Data_filt2_tmp <- data.frame(CAG_measured = res_CAGsizing_test$S05202[which(res_CAGsizing_test$S05202$CAG_measured > 37), "CAG_measured"],
                          CAG_predicted = res_CAGsizing_test$S05202[which(res_CAGsizing_test$S05202$CAG_measured > 37), "CAG_predicted"],
@@ -3964,7 +3602,6 @@ p3_E <- p3_E + labs(tag = "E") + theme(plot.tag = element_text(size = 20, face =
 
 p3_F <- ggplot(CTRL_all_datasets[which(CTRL_all_datasets$TISSUE == "Caudate"), ], aes(x = TISSUE, color = DATASET, y = 100*PRED_FRACT_CDE, size = Fract_SPN)) +
 geom_point(aes(size = Fract_SPN), alpha = 0.8, position = position_jitter(width = 0.3, height = 0)) +
-#scale_color_manual(values =c("#F8766D")) +
 theme_classic() +
 xlab("Tissue") +
 ylim(c(0, 100)) +
@@ -4042,7 +3679,6 @@ p4_E <- p4_E + labs(tag = "E") + theme(plot.tag = element_text(size = 20, face =
 
 p4_F <- ggplot(CTRL_all_datasets[which(CTRL_all_datasets$TISSUE != "Caudate"), ], aes(x = TISSUE, color = DATASET, y = 100*PRED_FRACT_CDE, size = Fract_SPN)) +
 geom_point(aes(size = Fract_SPN), alpha = 0.8, position = position_jitter(width = 0.3, height = 0)) +
-#scale_color_manual(values =c("#F8766D")) +
 theme_classic() +
 xlab("Tissue") +
 ylim(c(0, 100)) +
@@ -4389,12 +4025,6 @@ pS6 <- (pS6_A | pS6_B | pS6_C) / (pS6_D | pS6_E | pS6_F)
 pS6
 ggsave("Figure_S6.pdf", width = 18, height = 14)
 ggsave("Figure_S6.tiff", width = 18, height = 14)
-```
-
-
-```R
-#CTRL_all_datasets[which(CTRL_all_datasets$TISSUE == "Caudate"), ]
-#1 - sum(CTRL_all_datasets[which(CTRL_all_datasets$TISSUE == "Caudate"), "NUM_SPN"]*CTRL_all_datasets[which(CTRL_all_datasets$TISSUE == "Caudate"), "PRED_FRACT_CDE"])/sum(CTRL_all_datasets[which(CTRL_all_datasets$TISSUE == "Caudate"), "NUM_SPN"])
 ```
 
 
