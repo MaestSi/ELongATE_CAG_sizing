@@ -9,4 +9,6 @@ In this repository, you will find:
 
 ## Citation
 
-This work is currently under revision in the Journal of Huntington's Disease.
+If this tool is useful for your work, please consider citing our [manuscript](https://journals.sagepub.com/doi/10.1177/18796397261443137).
+
+Maestri S, Scalzo D, Zobel M, Besusso D, Cattaneo E. Towards AI-driven prediction of HTT CAG size in super-expanded human spiny projection neurons from Huntington disease donors. Journal of Huntington’s Disease. 2026;0(0). doi:10.1177/18796397261443137
